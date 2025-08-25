@@ -10,10 +10,7 @@ import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
-  ) {}
+  constructor(@InjectModel(User.name) private userModel: Model<User>) {}
 
   /** Register user with password hashing */
   async createUser(userData: {

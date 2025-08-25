@@ -37,7 +37,9 @@ export class AuthService {
     // Replace this with actual email service
     console.log(`[OTP] Sending code ${otp} to ${email}`);
 
-    return { message: 'Verification code sent to email' };
+    return SuccessResponse(StatusCodes.OK, 'Verification code sent to email', {
+      email: email,
+    });
   }
 
   async verifyEmailOtp(email: string, code: string) {
@@ -46,17 +48,19 @@ export class AuthService {
     if (entry.expiresAt < new Date())
       throw new BadRequestException('Code expired');
     if (entry.code !== code) throw new UnauthorizedException('Invalid code');
-    return { verified: true };
+    return SuccessResponse(StatusCodes.OK, 'Email verified successfully', {
+      email: email,
+    });
   }
 
-  async createAccount(
-    email: string,
-    username: string,
-    fullName: string,
-    password: string,
-  ) {
+  async createAccount(email: string, password: string) {
     const entry = this.otpStore.get(email);
     if (!entry) throw new UnauthorizedException('Email not verified');
+
+    const username =
+      email.split('@')[0].toLowerCase().replace(/\s+/g, '') + Date.now();
+    const fullName =
+      email.split('@')[0].toLowerCase().replace(/\s+/g, '') + Date.now();
 
     const user = await this.userService.createUser({
       email,
@@ -124,7 +128,9 @@ export class AuthService {
     await user.save();
 
     this.otpStore.delete(email);
-    return { message: 'Password reset successful' };
+    return SuccessResponse(StatusCodes.OK, 'Password reset successfully', {
+      email: email,
+    });
   }
 
   async updateUserType(userId: string, isArtist: boolean) {

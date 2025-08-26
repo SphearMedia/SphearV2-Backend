@@ -59,6 +59,10 @@ export class UsersService {
     return user;
   }
 
+  async findByReferralCode(code: string): Promise<User | null> {
+    return this.userModel.findOne({ referralCode: code }).exec();
+  }
+
   async updateProfile(userId: string, update: Partial<User>): Promise<User> {
     const updated = await this.userModel.findByIdAndUpdate(
       userId,

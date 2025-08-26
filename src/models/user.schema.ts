@@ -83,6 +83,15 @@ export class User extends Document {
 
   @Prop()
   refreshToken?: string;
+
+  @Prop({ default: null, unique: true, sparse: true })
+  referralCode: string;
+
+  @Prop({ default: null, type: Types.ObjectId, ref: 'User' })
+  referredBy?: Types.ObjectId;
+
+  @Prop({ default: [], type: [Types.ObjectId], ref: 'User' })
+  referredUsers?: Types.ObjectId[];
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

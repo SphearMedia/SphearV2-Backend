@@ -9,8 +9,10 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from 'src/users/users.service';
 import * as bcrypt from 'bcrypt';
 import { createToken } from 'src/utils/token.setup.utils';
-import { SuccessResponse } from 'src/utils/response.util';
+import { ErrorResponse, SuccessResponse } from 'src/utils/response.util';
 import { StatusCodes } from 'http-status-codes';
+import { v4 as uuidv4 } from 'uuid';
+import { Types } from 'mongoose';
 
 interface OtpStoreEntry {
   code: string;
@@ -48,6 +50,11 @@ export class AuthService {
     if (entry.expiresAt < new Date())
       throw new BadRequestException('Code expired');
     if (entry.code !== code) throw new UnauthorizedException('Invalid code');
+
+    const user = await this.userService.findByEmail(email);
+    if (user && !user.emailVerified) {
+      await this.userService.updateProfile(user.id, { emailVerified: true });
+    }
     return SuccessResponse(StatusCodes.OK, 'Email verified successfully', {
       email: email,
     });
@@ -82,6 +89,30 @@ export class AuthService {
     const user = await this.userService.validateUser(email, password);
     if (!user) throw new UnauthorizedException('Invalid credentials');
     const access_token = createToken(user, this.configService, this.jwtService);
+    if (!user.emailVerified) {
+      throw ErrorResponse(
+        StatusCodes.UNAUTHORIZED,
+        'Email not verified',
+        //  'needsEmailVerification',{}
+        {
+          id: user._id,
+          needsEmailVerification: true,
+          access_token
+        },
+      );
+    }
+
+    if (user.role === 'user' && !user.referredBy) {
+      throw ErrorResponse(
+        StatusCodes.UNAUTHORIZED,
+        'Invite code not verified',
+        {
+          id: user._id,
+          needsInviteCodeVerification: true,
+          access_token
+        },
+      );
+    }
     return SuccessResponse(StatusCodes.OK, 'Login successful', {
       id: user._id,
       access_token,
@@ -136,13 +167,47 @@ export class AuthService {
   async updateUserType(userId: string, isArtist: boolean) {
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
+
+    const role = isArtist ? 'artist' : 'user';
+    const inviteCode = isArtist ? uuidv4().slice(0, 8) : undefined;
+
     await this.userService.updateProfile(userId, {
-      role: isArtist ? 'artist' : 'user',
+      role,
+      referralCode: inviteCode,
     });
+
     return SuccessResponse(
       StatusCodes.OK,
       `User role updated to ${isArtist ? 'artist' : 'user'}`,
-      { id: userId, role: isArtist ? 'artist' : 'user' },
+      { id: userId, role, inviteCode },
+    );
+  }
+
+  async verifyArtistInviteCode(code: string, userId: string) {
+    const artist = await this.userService.findByReferralCode(code);
+    if (!artist || artist.role !== 'artist') {
+      throw new NotFoundException('Invalid or expired invite code');
+    }
+
+    await this.userService.updateProfile(userId, {
+      referredBy: artist.id,
+    });
+
+    const userObjectId = new Types.ObjectId(userId);
+
+    await this.userService.updateProfile(artist.id, {
+      referredUsers: [...(artist.referredUsers || []), userObjectId],
+    });
+
+    return SuccessResponse(
+      StatusCodes.OK,
+      'Invite code verified successfully',
+      {
+        referredBy: artist.id,
+        artistId: artist._id,
+        artistUsername: artist.username,
+        message: 'Invite code applied successfully',
+      },
     );
   }
 

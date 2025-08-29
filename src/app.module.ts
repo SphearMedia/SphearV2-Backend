@@ -6,6 +6,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UploaderModule } from './uploader/uploader.module';
 import { AppRedisModule } from './globals/redis.module';
+import { MusicalModule } from './musical/musical.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { AppRedisModule } from './globals/redis.module';
     AuthModule,
     UploaderModule,
     AppRedisModule,
+    MusicalModule,
   ],
   providers: [],
 })

@@ -18,6 +18,7 @@ export class UsersService {
     username: string;
     fullName: string;
     password: string;
+    emailVerified: boolean;
   }): Promise<User> {
     const existing = await this.userModel.findOne({
       $or: [{ email: userData.email }, { username: userData.username }],
@@ -31,6 +32,7 @@ export class UsersService {
     const user = new this.userModel({
       ...userData,
       password: hashedPassword,
+      
     });
 
     return user.save();
@@ -53,9 +55,9 @@ export class UsersService {
     return this.userModel.findOne({ username }).exec();
   }
 
-  async findById(userId: string): Promise<User> {
+  async findById(userId: string): Promise<User | null> {
     const user = await this.userModel.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
+
     return user;
   }
 

@@ -12,7 +12,7 @@ export class User extends Document {
   @Prop({ required: true, unique: true, lowercase: true, trim: true })
   username: string;
 
-  @Prop({ required: true, trim: true })
+  @Prop({ required: true, trim: true, sparse: true })
   fullName: string;
 
   @Prop({ required: true })
@@ -46,8 +46,11 @@ export class User extends Document {
   emailVerified: boolean;
 
   /** 🧠 Artist Info (if applicable) */
-  @Prop({ default: null })
+  @Prop({ default: null, trim: true, sparse: true })
   stageName?: string;
+
+  @Prop({ default: null, trim: true, sparse: true })
+  artistCoverImage?: string;
 
   @Prop({ type: [String], default: [] })
   genres?: string[]; // artist genres

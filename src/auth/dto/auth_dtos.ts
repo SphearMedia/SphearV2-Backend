@@ -36,3 +36,16 @@ export class ResetPasswordAuthDto {
 export class UpdateUserTypeAuthDto {
   isArtist: boolean;
 }
+
+export class UploadDto {
+  purpose: string;
+}
+
+export class ArtistProfilesetterDto {
+  fullName: string;
+  stageName: string;
+}
+
+export class VerifyInviteCodeDto {
+  inviteCode: string;
+}

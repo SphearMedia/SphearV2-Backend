@@ -7,6 +7,9 @@ import {
   Param,
   Delete,
   Req,
+  UseInterceptors,
+  UploadedFile,
+  UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { JoiValidationPipe } from 'src/pipes/joi-validation.pipe';
@@ -17,10 +20,13 @@ import {
   RequestEmailVerificationSchemaValidator,
   ResendEmailSchemaValidator,
   ResetPasswordSchemaValidator,
+  UpdateArtistProfileSchemaValidator,
   UpdateUserTypeSchemaValidator,
+  VerifyArtistInviteCodeSchemaValidator,
   VerifyEmailSchemaValidator,
 } from 'src/pipes/input.validators';
 import {
+  ArtistProfilesetterDto,
   CreateAccountAuthDto,
   ForgotPasswordAuthDto,
   LoginAuthDto,
@@ -28,8 +34,12 @@ import {
   ResendEmailAuthDto,
   ResetPasswordAuthDto,
   UpdateUserTypeAuthDto,
+  UploadDto,
   VerifyEmailAuthDto,
+  VerifyInviteCodeDto,
 } from './dto/auth_dtos';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { JwtAuthGuard } from 'src/config/jwt-auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -83,7 +93,7 @@ export class AuthController {
     return this.authService.forgotPassword(dto.email);
   }
 
-  @Post('reset-password')
+  @Patch('reset-password')
   async resetPassword(
     @Body(new JoiValidationPipe(ResetPasswordSchemaValidator))
     dto: ResetPasswordAuthDto,
@@ -91,12 +101,55 @@ export class AuthController {
     return this.authService.resetPassword(dto.email, dto.code, dto.newPassword);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch('update-user-type')
   async updateUserType(
     @Body(new JoiValidationPipe(UpdateUserTypeSchemaValidator))
     dto: UpdateUserTypeAuthDto,
     @Req() req,
   ) {
-    return this.authService.updateUserType(req.user.id, dto.isArtist);
+    return this.authService.updateUserType(req.user.userId, dto.isArtist);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('verify-invite-code')
+  async verifyInviteCodeForUser(
+    @Body(new JoiValidationPipe(VerifyArtistInviteCodeSchemaValidator))
+    dto: VerifyInviteCodeDto,
+    @Req() req,
+  ) {
+    return this.authService.verifyArtistInviteCode(
+      req.user.userId,
+      dto.inviteCode,
+    );
+  }
+
+  @Post('upload-return-url')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadFile(@UploadedFile() file: Express.Multer.File) {
+    return this.authService.uploadTest(file);
+  }
+
+  //  @UseGuards(JwtAuthGuard)
+  //   @Post('upload-file-saver')
+  //   @UseInterceptors(FileInterceptor('file'))
+  //   async uploadFileSaver(
+  //     @UploadedFile() file: Express.Multer.File,
+  //     @Body() dto: UploadDto,
+  //      @Req() req,
+  //   ) {
+  //     return this.authService.uploadFileSave(req.user.id, file, dto.purpose);
+  //   }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('set-artist-profile')
+  @UseInterceptors(FileInterceptor('file'))
+  async artistProfileSetup(
+    @UploadedFile() file: Express.Multer.File,
+    @Body(new JoiValidationPipe(UpdateArtistProfileSchemaValidator))
+    dto: ArtistProfilesetterDto,
+    @Req() req,
+  ) {
+    return this.authService.setupArtistProfile(req.user.userId, file, dto);
   }
 }

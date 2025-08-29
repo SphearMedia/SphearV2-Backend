@@ -39,3 +39,13 @@ export const ResetPasswordSchemaValidator = Joi.object({
 export const UpdateUserTypeSchemaValidator = Joi.object({
   isArtist: Joi.boolean().required(),
 });
+
+
+export const UpdateArtistProfileSchemaValidator = Joi.object({
+  fullName: Joi.string().required(),
+  stageName: Joi.string().required(),
+});
+
+export const VerifyArtistInviteCodeSchemaValidator = Joi.object({
+  inviteCode: Joi.string().length(6).required(),
+});

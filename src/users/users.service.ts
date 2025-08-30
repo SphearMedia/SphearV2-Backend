@@ -32,7 +32,6 @@ export class UsersService {
     const user = new this.userModel({
       ...userData,
       password: hashedPassword,
-      
     });
 
     return user.save();

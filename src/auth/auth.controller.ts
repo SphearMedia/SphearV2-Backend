@@ -40,6 +40,7 @@ import {
 } from './dto/auth_dtos';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/config/jwt-auth.guard';
+import { Roles, RolesGuard } from 'src/config/roles.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -111,8 +112,9 @@ export class AuthController {
     return this.authService.updateUserType(req.user.userId, dto.isArtist);
   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('verify-invite-code')
+  @Roles('user')
   async verifyInviteCodeForUser(
     @Body(new JoiValidationPipe(VerifyArtistInviteCodeSchemaValidator))
     dto: VerifyInviteCodeDto,
@@ -141,8 +143,9 @@ export class AuthController {
   //     return this.authService.uploadFileSave(req.user.id, file, dto.purpose);
   //   }
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('set-artist-profile')
+  @Roles('artist')
   @UseInterceptors(FileInterceptor('file'))
   async artistProfileSetup(
     @UploadedFile() file: Express.Multer.File,

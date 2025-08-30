@@ -1,4 +1,5 @@
 import * as Joi from 'joi';
+import { GenreEnum, ProjectTypeEnum } from 'src/enums/track.data.enums';
 
 export const RequestEmailVerificationSchemaValidator = Joi.object({
   email: Joi.string().email().required(),
@@ -35,11 +36,9 @@ export const ResetPasswordSchemaValidator = Joi.object({
   code: Joi.string().length(6).required(),
 });
 
-
 export const UpdateUserTypeSchemaValidator = Joi.object({
   isArtist: Joi.boolean().required(),
 });
-
 
 export const UpdateArtistProfileSchemaValidator = Joi.object({
   fullName: Joi.string().required(),
@@ -48,4 +47,63 @@ export const UpdateArtistProfileSchemaValidator = Joi.object({
 
 export const VerifyArtistInviteCodeSchemaValidator = Joi.object({
   inviteCode: Joi.string().length(6).required(),
+});
+
+export const CreateSingleSchemaValidator = Joi.object({
+  title: Joi.string().trim().min(2).max(100).required(),
+  primaryArtist: Joi.string().trim().min(2).max(100).required(),
+  featuredArtists: Joi.array()
+    .items(Joi.string().trim().min(2).max(100))
+    .default([]),
+  isJointRelease: Joi.boolean().default(false),
+  genre: Joi.string()
+    .valid(...Object.values(GenreEnum))
+    .required(),
+  coverArtUrl: Joi.string().trim().uri().required(),
+  recordLabel: Joi.string().trim().allow('', null),
+  composer: Joi.string().trim().allow('', null),
+  songWriter: Joi.string().trim().allow('', null),
+  producer: Joi.string().trim().allow('', null),
+  audioFileUrl: Joi.string().trim().uri().required(),
+  lyrics: Joi.string().trim().allow('', null),
+});
+
+export const CreateProjectSchemaValidator = Joi.object({
+  title: Joi.string().trim().min(2).max(100).required(),
+  type: Joi.string()
+    .valid(...Object.values(ProjectTypeEnum))
+    .required(),
+  primaryArtist: Joi.string().trim().min(2).max(100).required(),
+  featuredArtists: Joi.array()
+    .items(Joi.string().trim().min(2).max(100))
+    .default([]),
+  isJointRelease: Joi.boolean().default(false),
+  genre: Joi.string()
+    .valid(...Object.values(GenreEnum))
+    .required(),
+  coverArtUrl: Joi.string().trim().uri().required(),
+  recordLabel: Joi.string().trim().allow('', null),
+  tracks: Joi.array()
+    .items(
+      Joi.object({
+        title: Joi.string().trim().min(2).max(100).required(),
+        primaryArtist: Joi.string().trim().min(2).max(100).required(),
+        featuredArtists: Joi.array()
+          .items(Joi.string().trim().min(2).max(100))
+          .default([]),
+        isJointRelease: Joi.boolean().default(false),
+        genre: Joi.string()
+          .valid(...Object.values(GenreEnum))
+          .required(),
+        coverArtUrl: Joi.string().trim().uri().required(),
+        recordLabel: Joi.string().trim().allow('', null),
+        composer: Joi.string().trim().allow('', null),
+        songWriter: Joi.string().trim().allow('', null),
+        producer: Joi.string().trim().allow('', null),
+        audioFileUrl: Joi.string().trim().uri().required(),
+        lyrics: Joi.string().trim().allow('', null),
+      }),
+    )
+    .min(1)
+    .required(),
 });

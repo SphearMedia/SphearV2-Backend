@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { Project } from 'src/models/project.schema';
@@ -27,6 +31,7 @@ export class MusicalService {
     const single = await this.singleModel.create({
       ...dto,
       uploadedBy: userId,
+      releaseDate: new Date(dto.releaseDate),
     });
 
     return SuccessResponse(StatusCodes.OK, 'Single uploaded successfully', {
@@ -38,26 +43,6 @@ export class MusicalService {
     });
   }
 
-  //   async uploadProject(userId: string, dto: CreateProjectDto) {
-  //     const user = await this.userService.findById(userId);
-  //     if (!user) throw new NotFoundException('User not found');
-
-  //     const album = await this.projectModel.create({
-  //       ...dto,
-  //       uploadedBy: userId,
-  //       tracks: dto.tracks.map((track) => ({ ...track })),
-  //     });
-
-  //     return SuccessResponse(StatusCodes.OK, 'Project uploaded successfully', {
-  //       title: album.title,
-  //       id: album._id,
-  //       primaryArtist: album.primaryArtist,
-  //       featuredArtists: album.featuredArtists,
-  //       genre: album.genre,
-  //       type: album.type,
-  //     });
-  //   }
-
   async uploadProject(userId: string, dto: CreateProjectDto) {
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
@@ -68,6 +53,7 @@ export class MusicalService {
       const createdTrack = await this.singleModel.create({
         ...trackDto,
         uploadedBy: userId,
+        releaseDate: new Date(trackDto.releaseDate),
       });
 
       trackIds.push(createdTrack.id);
@@ -83,6 +69,7 @@ export class MusicalService {
       coverArtUrl: dto.coverArtUrl,
       recordLabel: dto.recordLabel,
       uploadedBy: userId,
+      eleaseDate: new Date(dto.releaseDate),
       tracks: trackIds, // only _id refs go here
     });
 
@@ -97,11 +84,23 @@ export class MusicalService {
   }
 
   async getSingleById(id: string) {
-    return await this.singleModel.findById(id).exec();
+    const single = await this.singleModel.findById(id).exec();
+
+    if (!single) throw new NotFoundException('Single not found');
+
+    return SuccessResponse(StatusCodes.OK, 'Single fetched successfully', {
+      single,
+    });
   }
 
   async getProjectById(id: string) {
-    return await this.projectModel.findById(id).exec();
+    const album = await this.projectModel.findById(id).exec();
+
+    if (!album) throw new NotFoundException('Project not found');
+
+    return SuccessResponse(StatusCodes.OK, 'Project fetched successfully', {
+      album,
+    });
   }
 
   async incrementSinglePlay(id: string) {
@@ -109,17 +108,10 @@ export class MusicalService {
     if (!track) throw new NotFoundException('Track not found');
     track.playCount += 1;
     await track.save();
-    return track;
+    return SuccessResponse(StatusCodes.OK, 'Track play count incremented', {
+      playCount: track.playCount,
+    });
   }
-
-  //   async incrementProjectTrackPlay(projectId: string, trackIndex: number) {
-  //     const project = await this.projectModel.findById(projectId);
-  //     if (!project || !project.tracks[trackIndex])
-  //       throw new NotFoundException('Track not found');
-  //     project.tracks[trackIndex].playCount += 1;
-  //     await project.save();
-  //     return project.tracks[trackIndex];
-  //   }
 
   async incrementProjectTrackPlay(projectId: string, trackIndex: number) {
     const project = await this.projectModel
@@ -131,7 +123,13 @@ export class MusicalService {
     track.playCount += 1;
     await track.save();
 
-    return track;
+    return SuccessResponse(
+      StatusCodes.OK,
+      'Album Track play count incremented',
+      {
+        playCount: track.playCount,
+      },
+    );
   }
 
   getTrackMetadataOptions() {
@@ -207,6 +205,55 @@ export class MusicalService {
           total: totalProjects,
           currentPage: +page,
           totalPages: Math.ceil(totalProjects / +limit),
+        },
+      },
+    );
+  }
+
+  async followOrUnfollowArtist(currentUserId: string, targetArtistId: string) {
+    if (currentUserId === targetArtistId) {
+      throw new BadRequestException('You cannot follow yourself');
+    }
+
+    const currentUser = await this.userService.findById(currentUserId);
+    if (!currentUser) throw new NotFoundException('User not found');
+
+    const targetArtist = await this.userService.findById(targetArtistId);
+    if (!targetArtist || targetArtist.role !== 'artist') {
+      throw new NotFoundException('Artist not found');
+    }
+
+    const isFollowing = currentUser.following.includes(targetArtist.id);
+
+    if (isFollowing) {
+      // Unfollow
+      currentUser.following = currentUser.following.filter(
+        (id) => id.toString() !== targetArtist.id.toString(),
+      );
+      targetArtist.followers = targetArtist.followers.filter(
+        (id) => id.toString() !== currentUser.id.toString(),
+      );
+    } else {
+      // Follow
+      currentUser.following.push(targetArtist.id);
+      targetArtist.followers.push(currentUser.id);
+    }
+
+    await currentUser.save();
+    await targetArtist.save();
+
+    return SuccessResponse(
+      StatusCodes.OK,
+      isFollowing ? 'Unfollowed artist' : 'Followed artist',
+      {
+        isFollowing: !isFollowing,
+        currentUser: {
+          id: currentUser.id,
+          followingCount: currentUser.following.length,
+        },
+        targetArtist: {
+          id: targetArtist.id,
+          followersCount: targetArtist.followers.length,
         },
       },
     );

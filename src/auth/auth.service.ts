@@ -175,6 +175,7 @@ export class AuthService {
     }
     return SuccessResponse(StatusCodes.OK, 'Login successful', {
       id: user._id,
+      role: user.role,
       access_token,
     });
   }

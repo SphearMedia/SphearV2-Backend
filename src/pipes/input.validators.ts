@@ -66,6 +66,8 @@ export const CreateSingleSchemaValidator = Joi.object({
   producer: Joi.string().trim().allow('', null),
   audioFileUrl: Joi.string().trim().uri().required(),
   lyrics: Joi.string().trim().allow('', null),
+  releaseDate: Joi.date().iso().required(),
+
 });
 
 export const CreateProjectSchemaValidator = Joi.object({
@@ -83,6 +85,7 @@ export const CreateProjectSchemaValidator = Joi.object({
     .required(),
   coverArtUrl: Joi.string().trim().uri().required(),
   recordLabel: Joi.string().trim().allow('', null),
+  releaseDate: Joi.date().iso().required(),
   tracks: Joi.array()
     .items(
       Joi.object({
@@ -102,8 +105,13 @@ export const CreateProjectSchemaValidator = Joi.object({
         producer: Joi.string().trim().allow('', null),
         audioFileUrl: Joi.string().trim().uri().required(),
         lyrics: Joi.string().trim().allow('', null),
+        releaseDate: Joi.date().iso().required(),
       }),
     )
     .min(1)
     .required(),
+});
+
+export const FollowOrUnfollowArtistSchemaValidator = Joi.object({
+  artistId: Joi.string().hex().length(24).required(),
 });

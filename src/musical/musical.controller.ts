@@ -14,7 +14,11 @@ import {
   Query,
 } from '@nestjs/common';
 import { MusicalService } from './musical.service';
-import { CreateSingleDto, CreateProjectDto } from './dto/musical.dto';
+import {
+  CreateSingleDto,
+  CreateProjectDto,
+  FollowOrUnfollowArtistDto,
+} from './dto/musical.dto';
 import { JwtAuthGuard } from 'src/config/jwt-auth.guard';
 import { FileInterceptor, FilesInterceptor } from '@nestjs/platform-express';
 import { Roles, RolesGuard } from 'src/config/roles.guard';
@@ -49,25 +53,25 @@ export class MusicalController {
     return this.musicalService.uploadProject(req.user.userId, dto);
   }
 
-  @Get('single/:id')
-  async getSingle(@Param('id') id: string) {
+  @Get('single')
+  async getSingle(@Query('id') id: string) {
     return this.musicalService.getSingleById(id);
   }
 
-  @Get('project/:id')
-  async getProject(@Param('id') id: string) {
+  @Get('project')
+  async getProject(@Query('id') id: string) {
     return this.musicalService.getProjectById(id);
   }
 
-  @Post('single/:id/play')
-  async playSingle(@Param('id') id: string) {
+  @Patch('single/play')
+  async playSingle(@Query('id') id: string) {
     return this.musicalService.incrementSinglePlay(id);
   }
 
-  @Post('project/:id/play/:trackIndex')
+  @Patch('project/play')
   async playProjectTrack(
-    @Param('id') id: string,
-    @Param('trackIndex') index: string,
+    @Query('id') id: string,
+    @Query('trackIndex') index: string,
   ) {
     return this.musicalService.incrementProjectTrackPlay(id, parseInt(index));
   }
@@ -103,5 +107,18 @@ export class MusicalController {
     @Query('limit') limit = 10,
   ) {
     return this.musicalService.getArtistCatalog(req.user.userId, page, limit);
+  }
+
+  @Patch('followOrUnfollow')
+  @Roles('user')
+  followOrUnfollowArtist(
+    @Req() req,
+    @Body(new JoiValidationPipe(CreateSingleSchemaValidator))
+    dto: FollowOrUnfollowArtistDto,
+  ) {
+    return this.musicalService.followOrUnfollowArtist(
+      req.user.userId,
+      dto.artistId,
+    );
   }
 }

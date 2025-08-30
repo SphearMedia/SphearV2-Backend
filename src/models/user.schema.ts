@@ -95,6 +95,9 @@ export class User extends Document {
 
   @Prop({ default: [], type: [Types.ObjectId], ref: 'User' })
   referredUsers?: Types.ObjectId[];
+
+  @Prop({ type: Date, required: true })
+  releaseDate: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

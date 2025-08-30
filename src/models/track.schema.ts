@@ -42,6 +42,9 @@ export class Track extends Document {
 
   @Prop({ default: 0 })
   playCount: number;
+
+  @Prop({ type: Date, required: true })
+  releaseDate: Date;
 }
 
 export const TrackSchema = SchemaFactory.createForClass(Track);

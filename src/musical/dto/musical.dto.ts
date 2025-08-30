@@ -6,6 +6,7 @@ import {
   IsUrl,
   IsArray,
   ValidateNested,
+  IsDateString,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { GenreEnum } from 'src/enums/track.data.enums';
@@ -22,6 +23,8 @@ export class CreateSingleDto {
   @IsOptional() @IsString() producer?: string;
   @IsString() trackUrl: string;
   @IsOptional() @IsString() lyrics?: string;
+  @IsDateString()
+  releaseDate: string;
 }
 
 export class CreateProjectDto {
@@ -33,9 +36,14 @@ export class CreateProjectDto {
   @IsUrl() coverArtUrl: string;
   @IsOptional() @IsString() recordLabel?: string;
   @IsString() type: string;
-
+  @IsDateString()
+  releaseDate: string;
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateSingleDto)
   tracks: CreateSingleDto[];
+}
+
+export class FollowOrUnfollowArtistDto {
+  @IsString() artistId: string;
 }

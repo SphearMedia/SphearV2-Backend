@@ -247,10 +247,12 @@ export class AuthService {
       referralCode: inviteCode,
     });
 
+    const access_token = createToken(user, this.configService, this.jwtService);
+
     return SuccessResponse(
       StatusCodes.OK,
       `User role updated to ${isArtist ? 'artist' : 'user'}`,
-      { id: userId, role, inviteCode },
+      { id: userId, role, inviteCode, access_token },
     );
   }
 

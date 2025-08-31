@@ -64,16 +64,21 @@ export class MusicalController {
   }
 
   @Patch('single/play')
-  async playSingle(@Query('id') id: string) {
-    return this.musicalService.incrementSinglePlay(id);
+  async playSingle(@Query('id') id: string, @Req() req) {
+    return this.musicalService.incrementSinglePlay(req.user.userId, id);
   }
 
   @Patch('project/play')
   async playProjectTrack(
     @Query('id') id: string,
     @Query('trackIndex') index: string,
+    @Req() req,
   ) {
-    return this.musicalService.incrementProjectTrackPlay(id, parseInt(index));
+    return this.musicalService.incrementProjectTrackPlay(
+      req.user.userId,
+      id,
+      parseInt(index),
+    );
   }
 
   @Get('metadata-options')
@@ -121,4 +126,10 @@ export class MusicalController {
       dto.artistId,
     );
   }
+
+  @Get('recent-plays')
+  getUserRecentPlays(@Req() req) {
+    return this.musicalService.getUserRecentPlays(req.user.userId);
+  }
+  
 }

@@ -25,6 +25,7 @@ import { Roles, RolesGuard } from 'src/config/roles.guard';
 import {
   CreateSingleSchemaValidator,
   CreateProjectSchemaValidator,
+  FollowOrUnfollowArtistSchemaValidator,
 } from 'src/pipes/input.validators';
 import { JoiValidationPipe } from 'src/pipes/joi-validation.pipe';
 
@@ -50,6 +51,7 @@ export class MusicalController {
     dto: CreateProjectDto,
     @Req() req,
   ) {
+   // console.log('DTO Received:', dto);
     return this.musicalService.uploadProject(req.user.userId, dto);
   }
 
@@ -118,7 +120,7 @@ export class MusicalController {
   @Roles('user')
   followOrUnfollowArtist(
     @Req() req,
-    @Body(new JoiValidationPipe(CreateSingleSchemaValidator))
+    @Body(new JoiValidationPipe(FollowOrUnfollowArtistSchemaValidator))
     dto: FollowOrUnfollowArtistDto,
   ) {
     return this.musicalService.followOrUnfollowArtist(
@@ -131,5 +133,24 @@ export class MusicalController {
   getUserRecentPlays(@Req() req) {
     return this.musicalService.getUserRecentPlays(req.user.userId);
   }
-  
+
+  @Get('artist-top')
+  getArtistTopMusic(@Req() req) {
+    return this.musicalService.getTopMusicByArtist(req.user.userId);
+  }
+
+  @Get('artist-recent')
+  async getArtistRecentMusic(@Req() req) {
+    return this.musicalService.getRecentMusicByArtist(req.user.userId);
+  }
+
+  @Get('top-streams')
+  getTopMusic() {
+    return this.musicalService.getTopMusic();
+  }
+
+  @Get('recent-uploads')
+  getRecentMusic() {
+    return this.musicalService.getRecentMusic();
+  }
 }

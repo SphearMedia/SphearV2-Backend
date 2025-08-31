@@ -156,4 +156,10 @@ export class AuthController {
     console.log('----->', req.user);
     return this.authService.setupArtistProfile(req.user.userId, file, dto);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('profile')
+  async getProfile(@Req() req) {
+    return this.authService.getProfileDetails(req.user.userId);
+  }
 }

@@ -242,7 +242,7 @@ export class AuthService {
     const role = isArtist ? 'artist' : 'user';
     const inviteCode = isArtist ? uuidv4().slice(0, 6) : undefined;
 
-   user = await this.userService.updateProfile(userId, {
+    user = await this.userService.updateProfile(userId, {
       role,
       referralCode: inviteCode,
     });
@@ -321,6 +321,34 @@ export class AuthService {
     return SuccessResponse(StatusCodes.OK, 'File uploaded successfully', {
       key,
       url,
+    });
+  }
+
+  async getProfileDetails(userId: string) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+    let artistInfo: Record<string, any> = {};
+    if (user.role === 'artist') {
+      artistInfo = {
+        stageName: user.stageName,
+        artistCoverImage: user.artistCoverImage,
+        genres: user.genres,
+        isVerifiedArtist: user.isVerifiedArtist,
+        links: user.links,
+        followersCount: user.followers?.length || 0,
+        followingCount: user.following?.length || 0,
+      };
+    }
+    return SuccessResponse(StatusCodes.OK, 'User profile fetched', {
+      id: user._id,
+      email: user.email,
+      fullName: user.fullName,
+      username: user.username,
+      bio: user.bio,
+      profilePicture: user.profilePicture,
+      role: user.role,
+      emailVerified: user.emailVerified,
+      artistInfo,
     });
   }
 }

@@ -34,6 +34,9 @@ export class Project extends Document {
 
   @Prop({ type: [{ type: Types.ObjectId, ref: 'Track' }], default: [] })
   tracks: Types.ObjectId[];
+  
+  @Prop({ type: Date, required: true })
+  releaseDate: Date;
 }
 
 export const ProjectSchema = SchemaFactory.createForClass(Project);

@@ -19,8 +19,8 @@ export class User extends Document {
   password: string; // hashed
 
   /** 🎨 Profile */
-  @Prop({ default: 'https://res.cloudinary.com/default-profile.png' })
-  profilePicture: string;
+  @Prop({default: null, sparse: true})
+  profilePicture?: string;
 
   @Prop({ default: '', trim: true })
   bio: string;
@@ -87,7 +87,7 @@ export class User extends Document {
   @Prop()
   refreshToken?: string;
 
-  @Prop({ default: null, unique: true, sparse: true })
+  @Prop({ default: null, sparse: true })
   referralCode: string;
 
   @Prop({ default: null, type: Types.ObjectId, ref: 'User' })
@@ -96,8 +96,7 @@ export class User extends Document {
   @Prop({ default: [], type: [Types.ObjectId], ref: 'User' })
   referredUsers?: Types.ObjectId[];
 
-  @Prop({ type: Date, required: true })
-  releaseDate: Date;
+ 
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

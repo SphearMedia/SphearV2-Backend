@@ -14,12 +14,15 @@ import { StatusCodes } from 'http-status-codes';
 import { title } from 'process';
 import { UploaderService } from 'src/uploader/uploader.service';
 import { UsersService } from 'src/users/users.service';
+import { PlayHistory } from 'src/models/play.history.schema';
 
 @Injectable()
 export class MusicalService {
   constructor(
     @InjectModel(Track.name) private readonly singleModel: Model<Track>,
     @InjectModel(Project.name) private readonly projectModel: Model<Project>,
+    @InjectModel(PlayHistory.name)
+    private readonly playHistoryModel: Model<PlayHistory>,
     private userService: UsersService,
     private uploaderService: UploaderService,
   ) {}
@@ -103,25 +106,89 @@ export class MusicalService {
     });
   }
 
-  async incrementSinglePlay(id: string) {
+  async incrementSinglePlay(userId: string, id: string) {
     const track = await this.singleModel.findById(id);
     if (!track) throw new NotFoundException('Track not found');
-    track.playCount += 1;
-    await track.save();
+
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    let history = await this.playHistoryModel.findOne({
+      user: user._id,
+      track: track._id,
+      project: null,
+    });
+
+    const shouldIncrementPlayCount =
+      !history || !this.isRepeatWithinThreshold(history.lastPlayedAt, 10);
+
+    if (shouldIncrementPlayCount) {
+      track.playCount += 1;
+      await track.save();
+
+      if (history) {
+        history.playCount += 1;
+        history.lastPlayedAt = new Date();
+        await history.save();
+      } else {
+        // Save play history
+        await this.playHistoryModel.create({
+          user: user._id,
+          track: track._id,
+          playCount: 1,
+          lastPlayedAt: new Date(),
+        });
+      }
+    }
+
     return SuccessResponse(StatusCodes.OK, 'Track play count incremented', {
       playCount: track.playCount,
     });
   }
 
-  async incrementProjectTrackPlay(projectId: string, trackIndex: number) {
+  async incrementProjectTrackPlay(
+    userId: string,
+    projectId: string,
+    trackIndex: number,
+  ) {
     const project = await this.projectModel
       .findById(projectId)
       .populate<{ tracks: TrackDocument[] }>('tracks');
     if (!project || !project.tracks[trackIndex])
       throw new NotFoundException('Track not found');
+
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
     const track = project.tracks[trackIndex];
-    track.playCount += 1;
-    await track.save();
+
+    let history = await this.playHistoryModel.findOne({
+      user: user._id,
+      track: track._id,
+      project: project._id,
+    });
+
+    const shouldIncrementPlayCount =
+      !history || !this.isRepeatWithinThreshold(history.lastPlayedAt, 10);
+
+    if (shouldIncrementPlayCount) {
+      track.playCount += 1;
+      await track.save();
+
+      if (history) {
+        history.playCount += 1;
+        history.lastPlayedAt = new Date();
+        await history.save();
+      } else {
+        await this.playHistoryModel.create({
+          user: user._id,
+          track: track._id,
+          project: project._id,
+          playCount: 1,
+          lastPlayedAt: new Date(),
+        });
+      }
+    }
 
     return SuccessResponse(
       StatusCodes.OK,
@@ -178,10 +245,12 @@ export class MusicalService {
     );
 
     // Step 2: Get tracks uploaded by user that are NOT in those projects
-    const singles = await this.singleModel.find({
-      uploadedBy: userId,
-      _id: { $nin: projectTrackIds },
-    });
+    const singles = await this.singleModel
+      .find({
+        uploadedBy: userId,
+        _id: { $nin: projectTrackIds },
+      })
+      .sort({ createdAt: -1 });
 
     // Step 3: Paginate projects and populate tracks
     const projects = await this.projectModel
@@ -189,6 +258,7 @@ export class MusicalService {
       .populate('tracks')
       .skip((+page - 1) * +limit)
       .limit(+limit)
+      .sort({ createdAt: -1 })
       .exec();
 
     const totalProjects = await this.projectModel.countDocuments({
@@ -257,5 +327,28 @@ export class MusicalService {
         },
       },
     );
+  }
+
+  async getUserRecentPlays(userId: string) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const recentPlays = await this.playHistoryModel
+      .find({ user: user._id })
+      .sort({ lastPlayedAt: -1 })
+      .limit(30)
+      .populate('track project');
+    return SuccessResponse(StatusCodes.OK, 'Recent plays fetched', {
+      recentPlays,
+    });
+  }
+
+  private isRepeatWithinThreshold(
+    lastPlayed: Date,
+    thresholdMins = 10,
+  ): boolean {
+    const diffMs = Date.now() - new Date(lastPlayed).getTime();
+    const diffMinutes = diffMs / (1000 * 60);
+    return diffMinutes < thresholdMins;
   }
 }

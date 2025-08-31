@@ -153,6 +153,7 @@ export class AuthController {
     dto: ArtistProfilesetterDto,
     @Req() req,
   ) {
+    console.log('----->', req.user);
     return this.authService.setupArtistProfile(req.user.userId, file, dto);
   }
 }

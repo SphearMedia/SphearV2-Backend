@@ -72,7 +72,7 @@ export class MusicalService {
       coverArtUrl: dto.coverArtUrl,
       recordLabel: dto.recordLabel,
       uploadedBy: userId,
-      eleaseDate: new Date(dto.releaseDate),
+      releaseDate: new Date(dto.releaseDate),
       tracks: trackIds, // only _id refs go here
     });
 
@@ -340,6 +340,145 @@ export class MusicalService {
       .populate('track project');
     return SuccessResponse(StatusCodes.OK, 'Recent plays fetched', {
       recentPlays,
+    });
+  }
+
+  async getTopMusicByArtist(userId: string, limit = 10) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.role !== 'artist') {
+      throw new BadRequestException('User is not an artist');
+    }
+
+    const projects = await this.projectModel
+      .find({ uploadedBy: userId })
+      .populate<{ tracks: TrackDocument[] }>('tracks')
+      .lean();
+
+    // Get all track IDs used in projects
+    const projectTrackIds = projects.flatMap((p) =>
+      p.tracks.map((t) => t._id.toString()),
+    );
+
+    // Fetch singles that are NOT part of any project
+    const topSingles = await this.singleModel
+      .find({
+        uploadedBy: userId,
+        _id: { $nin: projectTrackIds },
+      })
+      .sort({ playCount: -1 })
+      .limit(limit)
+      .lean();
+
+    const topProjectTracks = projects
+      .flatMap((p) =>
+        p.tracks.map((t) => ({
+          ...t,
+          project: { _id: p._id, title: p.title },
+        })),
+      )
+      .sort((a, b) => b.playCount - a.playCount)
+      .slice(0, limit);
+
+    const totalStreams = [
+      ...topSingles.map((t) => t.playCount),
+      ...topProjectTracks.map((t) => t.playCount),
+    ].reduce((acc, curr) => acc + curr, 0);
+
+    return SuccessResponse(StatusCodes.OK, 'Artist top music fetched', {
+      totalStreams,
+      topSingles,
+      topProjectTracks,
+    });
+  }
+
+  async getRecentMusicByArtist(userId: string, limit = 10) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    if (user.role !== 'artist') {
+      throw new BadRequestException('User is not an artist');
+    }
+
+    // Get all recent projects with tracks
+    const recentProjects = await this.projectModel
+      .find({ uploadedBy: userId })
+      .populate<{ tracks: TrackDocument[] }>('tracks')
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    const projectTrackIds = recentProjects.flatMap((p) =>
+      p.tracks.map((t) => t._id.toString()),
+    );
+
+    // Get recent singles not used in projects
+    const recentSingles = await this.singleModel
+      .find({
+        uploadedBy: userId,
+        _id: { $nin: projectTrackIds },
+      })
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    return SuccessResponse(StatusCodes.OK, 'Artist recent music fetched', {
+      recentSingles,
+      recentProjects,
+    });
+  }
+
+  async getTopMusic(limit = 10) {
+    const topSingles = await this.singleModel
+      .find()
+      .sort({ playCount: -1 })
+      .limit(limit)
+      .lean();
+
+    const projects = await this.projectModel
+      .find()
+      .populate<{ tracks: TrackDocument[] }>('tracks')
+      .lean();
+
+    const topProjectTracks = projects
+      .flatMap((p) =>
+        p.tracks.map((t) => ({
+          ...t,
+          project: { _id: p._id, title: p.title },
+        })),
+      )
+      .sort((a, b) => b.playCount - a.playCount)
+      .slice(0, limit);
+
+    const totalStreams = [
+      ...topSingles.map((t) => t.playCount),
+      ...topProjectTracks.map((t) => t.playCount),
+    ].reduce((acc, curr) => acc + curr, 0);
+
+    return SuccessResponse(StatusCodes.OK, 'Global Top music fetched', {
+      totalStreams,
+      topSingles,
+      topProjectTracks,
+    });
+  }
+
+  async getRecentMusic(limit = 10) {
+    const recentSingles = await this.singleModel
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    const recentProjects = await this.projectModel
+      .find()
+      .sort({ createdAt: -1 })
+      .limit(limit)
+      .lean();
+
+    return SuccessResponse(StatusCodes.OK, 'Global Recent music fetched', {
+      recentSingles,
+      recentProjects,
     });
   }
 

@@ -343,55 +343,111 @@ export class MusicalService {
     });
   }
 
+  // async getTopMusicByArtist(userId: string, limit = 10) {
+  //   const user = await this.userService.findById(userId);
+  //   if (!user) throw new NotFoundException('User not found');
+
+  //   if (user.role !== 'artist') {
+  //     throw new BadRequestException('User is not an artist');
+  //   }
+
+  //   const projects = await this.projectModel
+  //     .find({ uploadedBy: userId })
+  //     .populate<{ tracks: TrackDocument[] }>('tracks')
+  //     .lean();
+
+  //   // Get all track IDs used in projects
+  //   const projectTrackIds = projects.flatMap((p) =>
+  //     p.tracks.map((t) => t._id.toString()),
+  //   );
+
+  //   // Fetch singles that are NOT part of any project
+  //   const topSingles = await this.singleModel
+  //     .find({
+  //       uploadedBy: userId,
+  //       _id: { $nin: projectTrackIds },
+  //     })
+  //     .sort({ playCount: -1 })
+  //     .limit(limit)
+  //     .lean();
+
+  //   const topProjectTracks = projects
+  //     .flatMap((p) =>
+  //       p.tracks.map((t) => ({
+  //         ...t,
+  //         project: { _id: p._id, title: p.title },
+  //       })),
+  //     )
+  //     .sort((a, b) => b.playCount - a.playCount)
+  //     .slice(0, limit);
+
+  //   const totalStreams = [
+  //     ...topSingles.map((t) => t.playCount),
+  //     ...topProjectTracks.map((t) => t.playCount),
+  //   ].reduce((acc, curr) => acc + curr, 0);
+
+  //   return SuccessResponse(StatusCodes.OK, 'Artist top music fetched', {
+  //     totalStreams,
+  //     topSingles,
+  //     topProjectTracks,
+  //   });
+  // }
+
   async getTopMusicByArtist(userId: string, limit = 10) {
-    const user = await this.userService.findById(userId);
-    if (!user) throw new NotFoundException('User not found');
+  const user = await this.userService.findById(userId);
+  if (!user) throw new NotFoundException('User not found');
 
-    if (user.role !== 'artist') {
-      throw new BadRequestException('User is not an artist');
-    }
-
-    const projects = await this.projectModel
-      .find({ uploadedBy: userId })
-      .populate<{ tracks: TrackDocument[] }>('tracks')
-      .lean();
-
-    // Get all track IDs used in projects
-    const projectTrackIds = projects.flatMap((p) =>
-      p.tracks.map((t) => t._id.toString()),
-    );
-
-    // Fetch singles that are NOT part of any project
-    const topSingles = await this.singleModel
-      .find({
-        uploadedBy: userId,
-        _id: { $nin: projectTrackIds },
-      })
-      .sort({ playCount: -1 })
-      .limit(limit)
-      .lean();
-
-    const topProjectTracks = projects
-      .flatMap((p) =>
-        p.tracks.map((t) => ({
-          ...t,
-          project: { _id: p._id, title: p.title },
-        })),
-      )
-      .sort((a, b) => b.playCount - a.playCount)
-      .slice(0, limit);
-
-    const totalStreams = [
-      ...topSingles.map((t) => t.playCount),
-      ...topProjectTracks.map((t) => t.playCount),
-    ].reduce((acc, curr) => acc + curr, 0);
-
-    return SuccessResponse(StatusCodes.OK, 'Artist top music fetched', {
-      totalStreams,
-      topSingles,
-      topProjectTracks,
-    });
+  if (user.role !== 'artist') {
+    throw new BadRequestException('User is not an artist');
   }
+
+  // Fetch all projects (with tracks)
+  const projects = await this.projectModel
+    .find({ uploadedBy: userId })
+    .populate<{ tracks: TrackDocument[] }>('tracks')
+    .lean();
+
+  // Add a playCount field to each project (sum of all track playCounts)
+  const projectsWithPlayCounts = projects.map((project) => {
+    const projectPlayCount = project.tracks.reduce(
+      (acc, track) => acc + (track.playCount || 0),
+      0,
+    );
+    return { ...project, projectPlayCount };
+  });
+
+  // Sort by total playCount and take top N
+  const topProjects = projectsWithPlayCounts
+    .sort((a, b) => b.projectPlayCount - a.projectPlayCount)
+    .slice(0, limit);
+
+  // Extract all track IDs used in projects
+  const projectTrackIds = topProjects.flatMap((p) =>
+    p.tracks.map((t) => t._id.toString()),
+  );
+
+  // Fetch singles that are NOT part of any project
+  const topSingles = await this.singleModel
+    .find({
+      uploadedBy: userId,
+      _id: { $nin: projectTrackIds },
+    })
+    .sort({ playCount: -1 })
+    .limit(limit)
+    .lean();
+
+  // Calculate total streams across both
+  const totalStreams =
+    topSingles.reduce((acc, t) => acc + (t.playCount || 0), 0) +
+    topProjects.reduce((acc, p) => acc + p.projectPlayCount, 0);
+
+  return SuccessResponse(StatusCodes.OK, 'Artist top music fetched', {
+    totalStreams,
+    topSingles,
+    topProjects,
+  });
+}
+
 
   async getRecentMusicByArtist(userId: string, limit = 10) {
     const user = await this.userService.findById(userId);

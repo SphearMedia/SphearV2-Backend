@@ -235,14 +235,14 @@ export class AuthService {
   }
 
   async updateUserType(userId: string, isArtist: boolean) {
-    const user = await this.userService.findById(userId);
+    let user = await this.userService.findById(userId);
     console.log(userId);
     if (!user) throw new NotFoundException('User not found');
 
     const role = isArtist ? 'artist' : 'user';
     const inviteCode = isArtist ? uuidv4().slice(0, 6) : undefined;
 
-    await this.userService.updateProfile(userId, {
+   user = await this.userService.updateProfile(userId, {
       role,
       referralCode: inviteCode,
     });

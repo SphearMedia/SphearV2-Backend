@@ -7,6 +7,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { UploaderModule } from './uploader/uploader.module';
 import { AppRedisModule } from './globals/redis.module';
 import { MusicalModule } from './musical/musical.module';
+import { NotificationsModule } from './notifications/notifications.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { MusicalModule } from './musical/musical.module';
     UploaderModule,
     AppRedisModule,
     MusicalModule,
+    NotificationsModule,
   ],
   providers: [],
 })

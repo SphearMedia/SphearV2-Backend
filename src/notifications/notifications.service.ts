@@ -86,4 +86,63 @@ export class NotificationsService {
       .sort({ createdAt: -1 })
       .exec();
   }
+
+  async markAsRead(notificationId: string): Promise<Notification | null> {
+    return this.notificationModel
+      .findByIdAndUpdate(notificationId, { isRead: true }, { new: true })
+      .exec();
+  }
+
+  async markAllAsRead(userId: string): Promise<void> {
+    await this.notificationModel
+      .updateMany(
+        { userId: new Types.ObjectId(userId), isRead: false },
+        { isRead: true },
+      )
+      .exec();
+  }
+
+  async deleteNotification(notificationId: string): Promise<void> {
+    await this.notificationModel.findByIdAndDelete(notificationId).exec();
+  }
+
+  async createLoginNotification(userId: string): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Login Successful',
+      "You've successfully logged in. Your stage is set — dive back into your world of rhythm, inspiration, and endless vibes. Let the beat guide your journey.",
+      NotificationType.LOGIN,
+    );
+  }
+
+  async createFailedLoginAttemptNotification(
+    userId: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Security Alert: Failed Login Attempt',
+      "We noticed a failed login attempt on your account. If this wasn't you, please consider updating your password to keep your music and data safe. Your security is our priority.",
+      NotificationType.SYSTEM,
+    );
+  }
+
+  async createRegistrationNotification(userId: string): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'You’re In! Let’s Make Magic ✨',
+      'Welcome to Sphear Music — where every sound has a story. Your account is live and ready! Upload your creations, discover new beats, and grow your fanbase. This is where your musical legacy begins.',
+      NotificationType.REGISTRATION,
+    );
+  }
+
+  async createArtistProfileSetupNotification(
+    userId: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Your Artist Profile is Live! 🎤',
+      'Your artist profile is now live! Share your unique sound with the world, connect with fans, and let your music journey begin. This is your stage — own it!',
+      NotificationType.PROFILE_UPDATE,
+    );
+  }
 }

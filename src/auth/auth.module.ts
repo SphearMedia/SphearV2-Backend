@@ -8,6 +8,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from 'src/models/user.schema';
 import { JwtStrategy } from 'src/config/jwt.strategy';
 import { UploaderModule } from 'src/uploader/uploader.module';
+import { NotificationsModule } from 'src/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -22,6 +23,7 @@ import { UploaderModule } from 'src/uploader/uploader.module';
     }),
     UsersModule,
     UploaderModule,
+    NotificationsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

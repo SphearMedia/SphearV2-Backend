@@ -19,6 +19,7 @@ import { RedisService } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
 
 import { randomInt } from 'crypto';
+import { NotificationsService } from 'src/notifications/notifications.service';
 
 interface OtpStoreEntry {
   code: string;
@@ -35,6 +36,7 @@ export class AuthService {
     private uploaderService: UploaderService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
+    private readonly notificationsService: NotificationsService,
   ) {
     this.customRedisClient = this.redisService.getOrThrow('default');
   }
@@ -138,6 +140,7 @@ export class AuthService {
     await this.deleteOtp(email);
     //this.otpStore.delete(email);
     const access_token = createToken(user, this.configService, this.jwtService);
+    await this.notificationsService.createRegistrationNotification(user.id);
     return SuccessResponse(
       StatusCodes.CREATED,
       'Account created successfully',
@@ -147,7 +150,15 @@ export class AuthService {
 
   async login(email: string, password: string) {
     const user = await this.userService.validateUser(email, password);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+    if (!user) {
+      const emailUser = await this.userService.findByEmail(email);
+      if (emailUser) {
+        await this.notificationsService.createFailedLoginAttemptNotification(
+          emailUser?.id,
+        );
+      }
+      throw new UnauthorizedException('Invalid credentials');
+    }
     const access_token = createToken(user, this.configService, this.jwtService);
     if (!user.emailVerified) {
       return ErrorResponse(
@@ -173,6 +184,8 @@ export class AuthService {
         },
       );
     }
+
+    await this.notificationsService.createLoginNotification(user.id);
     return SuccessResponse(StatusCodes.OK, 'Login successful', {
       id: user._id,
       role: user.role,
@@ -318,6 +331,10 @@ export class AuthService {
       stageName: dto.stageName,
       artistCoverImage: url,
     });
+
+    await this.notificationsService.createArtistProfileSetupNotification(
+      userId,
+    );
     return SuccessResponse(StatusCodes.OK, 'File uploaded successfully', {
       key,
       url,

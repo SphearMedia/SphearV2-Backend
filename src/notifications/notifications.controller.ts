@@ -1,34 +1,81 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+  UseGuards,
+  Query,
+  Req,
+} from '@nestjs/common';
 import { NotificationsService } from './notifications.service';
-import { CreateNotificationDto } from './dto/create-notification.dto';
-import { UpdateNotificationDto } from './dto/update-notification.dto';
+import { JwtAuthGuard } from 'src/config/jwt-auth.guard';
+import { StatusCodes } from 'http-status-codes';
+import { SuccessResponse } from 'src/utils/response.util';
 
 @Controller('notifications')
+@UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
 
-  @Post()
-  create(@Body() createNotificationDto: CreateNotificationDto) {
-    return this.notificationsService.create(createNotificationDto);
-  }
-
   @Get()
-  findAll() {
-    return this.notificationsService.findAll();
+  async getUserNotifications(
+    @Req() req,
+    @Query('page') page: string = '1',
+    @Query('limit') limit: string = '10',
+  ) {
+    const pageNumber = parseInt(page, 10) || 1;
+    const limitNumber = parseInt(limit, 10) || 10;
+
+    // Ensure reasonable limits
+    const validatedLimit = Math.min(Math.max(limitNumber, 1), 100);
+    const validatedPage = Math.max(pageNumber, 1);
+
+    const result = await this.notificationsService.getUserNotifications(
+      req.user.userId,
+      validatedPage,
+      validatedLimit,
+    );
+
+    return SuccessResponse(
+      StatusCodes.OK,
+      'Notifications retrieved successfully',
+      result,
+    );
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.notificationsService.findOne(+id);
+  @Get('unread')
+  async getUnreadNotifications(@Req() req) {
+    const notifications =
+      await this.notificationsService.getUnreadNotifications(req.user.userId);
+    return SuccessResponse(
+      StatusCodes.OK,
+      'Unread notifications retrieved successfully',
+      notifications,
+    );
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateNotificationDto: UpdateNotificationDto) {
-    return this.notificationsService.update(+id, updateNotificationDto);
+  @Patch(':id/mark-read')
+  async markAsRead(@Param('id') id: string) {
+    const notification = await this.notificationsService.markAsRead(id);
+    return SuccessResponse(
+      StatusCodes.OK,
+      'Notification marked as read',
+      notification,
+    );
+  }
+
+  @Patch('mark-all-read')
+  async markAllAsRead(@Req() req) {
+    await this.notificationsService.markAllAsRead(req.user.userId);
+    return SuccessResponse(StatusCodes.OK, 'All notifications marked as read');
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.notificationsService.remove(+id);
+  async deleteNotification(@Param('id') id: string) {
+    await this.notificationsService.deleteNotification(id);
+    return SuccessResponse(StatusCodes.OK, 'Notification deleted successfully');
   }
 }

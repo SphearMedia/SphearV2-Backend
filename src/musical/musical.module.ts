@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { MusicalService } from './musical.service';
 import { MusicalController } from './musical.controller';
 import { MongooseModule } from '@nestjs/mongoose';
@@ -7,6 +7,8 @@ import { Track, TrackSchema } from 'src/models/track.schema';
 import { UploaderModule } from 'src/uploader/uploader.module';
 import { UsersModule } from 'src/users/users.module';
 import { PlayHistory, PlayHistorySchema } from 'src/models/play.history.schema';
+import { NotificationsModule } from 'src/notifications/notifications.module';
+import { NotificationQueueModule } from 'src/notifications/notification-queue.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { PlayHistory, PlayHistorySchema } from 'src/models/play.history.schema';
     ]),
     UsersModule,
     UploaderModule,
+    NotificationsModule,
+    forwardRef(() => NotificationQueueModule),
   ],
   controllers: [MusicalController],
   providers: [MusicalService],

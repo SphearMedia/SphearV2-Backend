@@ -15,6 +15,8 @@ import { title } from 'process';
 import { UploaderService } from 'src/uploader/uploader.service';
 import { UsersService } from 'src/users/users.service';
 import { PlayHistory } from 'src/models/play.history.schema';
+import { NotificationsService } from 'src/notifications/notifications.service';
+import { NotificationProducerService } from 'src/notifications/notification-producer.service';
 
 @Injectable()
 export class MusicalService {
@@ -25,6 +27,8 @@ export class MusicalService {
     private readonly playHistoryModel: Model<PlayHistory>,
     private userService: UsersService,
     private uploaderService: UploaderService,
+    private notificationsService: NotificationsService,
+    private readonly notificationProducer: NotificationProducerService,
   ) {}
 
   async uploadSingle(userId: string, dto: CreateSingleDto) {
@@ -75,6 +79,35 @@ export class MusicalService {
       releaseDate: new Date(dto.releaseDate),
       tracks: trackIds, // only _id refs go here
     });
+
+    await this.notificationsService.createAlbumReleaseNotification(
+      userId,
+      dto.title,
+    );
+
+    // const followers = await this.userService.getFollowers(userId);
+    // const artistName = user.stageName || user.username;
+
+    // await Promise.all(
+    //   followers.map((follower) =>
+    //     this.notificationsService.createReleaseNotification(
+    //       follower,
+    //       artistName,
+    //       dto.title,
+    //       'album',
+    //     ),
+    //   ),
+    // );
+
+    const followers = await this.userService.getFollowers(userId);
+    const artistName = user.stageName || user.username;
+
+    await this.notificationProducer.queueBulkReleaseNotifications(
+      followers,
+      artistName,
+      dto.title,
+      'album',
+    );
 
     return SuccessResponse(StatusCodes.OK, 'Project uploaded successfully', {
       title: album.title,
@@ -394,60 +427,59 @@ export class MusicalService {
   // }
 
   async getTopMusicByArtist(userId: string, limit = 10) {
-  const user = await this.userService.findById(userId);
-  if (!user) throw new NotFoundException('User not found');
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
 
-  if (user.role !== 'artist') {
-    throw new BadRequestException('User is not an artist');
-  }
+    if (user.role !== 'artist') {
+      throw new BadRequestException('User is not an artist');
+    }
 
-  // Fetch all projects (with tracks)
-  const projects = await this.projectModel
-    .find({ uploadedBy: userId })
-    .populate<{ tracks: TrackDocument[] }>('tracks')
-    .lean();
+    // Fetch all projects (with tracks)
+    const projects = await this.projectModel
+      .find({ uploadedBy: userId })
+      .populate<{ tracks: TrackDocument[] }>('tracks')
+      .lean();
 
-  // Add a playCount field to each project (sum of all track playCounts)
-  const projectsWithPlayCounts = projects.map((project) => {
-    const projectPlayCount = project.tracks.reduce(
-      (acc, track) => acc + (track.playCount || 0),
-      0,
+    // Add a playCount field to each project (sum of all track playCounts)
+    const projectsWithPlayCounts = projects.map((project) => {
+      const projectPlayCount = project.tracks.reduce(
+        (acc, track) => acc + (track.playCount || 0),
+        0,
+      );
+      return { ...project, projectPlayCount };
+    });
+
+    // Sort by total playCount and take top N
+    const topProjects = projectsWithPlayCounts
+      .sort((a, b) => b.projectPlayCount - a.projectPlayCount)
+      .slice(0, limit);
+
+    // Extract all track IDs used in projects
+    const projectTrackIds = topProjects.flatMap((p) =>
+      p.tracks.map((t) => t._id.toString()),
     );
-    return { ...project, projectPlayCount };
-  });
 
-  // Sort by total playCount and take top N
-  const topProjects = projectsWithPlayCounts
-    .sort((a, b) => b.projectPlayCount - a.projectPlayCount)
-    .slice(0, limit);
+    // Fetch singles that are NOT part of any project
+    const topSingles = await this.singleModel
+      .find({
+        uploadedBy: userId,
+        _id: { $nin: projectTrackIds },
+      })
+      .sort({ playCount: -1 })
+      .limit(limit)
+      .lean();
 
-  // Extract all track IDs used in projects
-  const projectTrackIds = topProjects.flatMap((p) =>
-    p.tracks.map((t) => t._id.toString()),
-  );
+    // Calculate total streams across both
+    const totalStreams =
+      topSingles.reduce((acc, t) => acc + (t.playCount || 0), 0) +
+      topProjects.reduce((acc, p) => acc + p.projectPlayCount, 0);
 
-  // Fetch singles that are NOT part of any project
-  const topSingles = await this.singleModel
-    .find({
-      uploadedBy: userId,
-      _id: { $nin: projectTrackIds },
-    })
-    .sort({ playCount: -1 })
-    .limit(limit)
-    .lean();
-
-  // Calculate total streams across both
-  const totalStreams =
-    topSingles.reduce((acc, t) => acc + (t.playCount || 0), 0) +
-    topProjects.reduce((acc, p) => acc + p.projectPlayCount, 0);
-
-  return SuccessResponse(StatusCodes.OK, 'Artist top music fetched', {
-    totalStreams,
-    topSingles,
-    topProjects,
-  });
-}
-
+    return SuccessResponse(StatusCodes.OK, 'Artist top music fetched', {
+      totalStreams,
+      topSingles,
+      topProjects,
+    });
+  }
 
   async getRecentMusicByArtist(userId: string, limit = 10) {
     const user = await this.userService.findById(userId);

@@ -6,6 +6,7 @@ import { ConfigService } from '@nestjs/config';
 import { Model, Types } from 'mongoose';
 import { UsersService } from 'src/users/users.service';
 import { NotificationType } from 'src/enums/notification.enum';
+import { Notification } from 'src/models/notification.schema';
 
 @Injectable()
 export class NotificationsService {
@@ -144,5 +145,49 @@ export class NotificationsService {
       'Your artist profile is now live! Share your unique sound with the world, connect with fans, and let your music journey begin. This is your stage — own it!',
       NotificationType.PROFILE_UPDATE,
     );
+  }
+
+  async createAlbumReleaseNotification(
+    userId: string,
+    albumTitle: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'New Album Released! 🎉',
+      `Your album "${albumTitle}" has been successfully released! Share your masterpiece with the world and let your music inspire others. Congratulations on this incredible achievement!`,
+      NotificationType.ALBUM_RELEASE,
+    );
+  }
+
+  async createSingleReleaseNotification(
+    userId: string,
+    singleTitle: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'New Single Released! 🎉',
+      `Your single "${singleTitle}" has been successfully released! Share your latest hit with the world and let your music resonate with listeners everywhere. Congratulations on this exciting milestone!`,
+      NotificationType.SINGLE_REALEASE,
+    );
+  }
+
+  async createReleaseNotification(
+    userId: string,
+    artistName: string,
+    releaseTitle: string,
+    releaseType: 'album' | 'single',
+  ): Promise<Notification> {
+    const isAlbum = releaseType === 'album';
+    const title = isAlbum ? 'New Album Alert! 🎵' : 'New Single Alert! 🎵';
+
+    const message = isAlbum
+      ? `${artistName} has just released a new album titled "${releaseTitle}". Dive into the latest sounds and support your favorite artist by giving it a listen!`
+      : `${artistName} has just dropped a new single titled "${releaseTitle}". Check it out now and stay tuned for more amazing music!`;
+
+    const type = isAlbum
+      ? NotificationType.ALBUM_RELEASE
+      : NotificationType.SINGLE_REALEASE;
+
+    return this.createNotification(userId, title, message, type);
   }
 }

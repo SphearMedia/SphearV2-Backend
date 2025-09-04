@@ -74,6 +74,16 @@ export class UsersService {
     return updated;
   }
 
+  async getFollowers(userId: string): Promise<string[]> {
+    const user = await this.userModel.findById(userId).select('followers');
+
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return user.followers.map((followerId) => followerId.toString());
+  }
+
   /** Get all users (optional for admin use) */
   async getAll(): Promise<User[]> {
     return this.userModel.find().exec();

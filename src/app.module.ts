@@ -8,6 +8,7 @@ import { UploaderModule } from './uploader/uploader.module';
 import { AppRedisModule } from './globals/redis.module';
 import { MusicalModule } from './musical/musical.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { NotificationQueueModule } from './notifications/notification-queue.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { NotificationsModule } from './notifications/notifications.module';
     AppRedisModule,
     MusicalModule,
     NotificationsModule,
+    NotificationQueueModule,
   ],
   providers: [],
 })

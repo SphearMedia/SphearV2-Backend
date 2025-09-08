@@ -17,7 +17,8 @@ export class CreateSingleDto {
   @IsBoolean() isJointRelease: boolean;
   @IsEnum(GenreEnum) genre: GenreEnum;
   @IsUrl() coverArt: string;
-  @IsOptional() @IsString() recordLabel?: string;
+  @IsOptional() @IsString() copyright?: string;
+  @IsOptional() @IsString() phonographic?: string;
   @IsOptional() @IsString() composer?: string;
   @IsOptional() @IsString() songWriter?: string;
   @IsOptional() @IsString() producer?: string;
@@ -34,7 +35,8 @@ export class CreateProjectDto {
   @IsBoolean() isJointRelease: boolean;
   @IsEnum(GenreEnum) genre: GenreEnum;
   @IsUrl() coverArtUrl: string;
-  @IsOptional() @IsString() recordLabel?: string;
+  @IsOptional() @IsString() copyright?: string;
+  @IsOptional() @IsString() phonographic?: string;
   @IsString() type: string;
   @IsDateString()
   releaseDate: string;

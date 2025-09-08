@@ -28,6 +28,7 @@ import {
   FollowOrUnfollowArtistSchemaValidator,
 } from 'src/pipes/input.validators';
 import { JoiValidationPipe } from 'src/pipes/joi-validation.pipe';
+import { multerConfig } from 'src/uploader/multer.config';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('musical')
@@ -89,7 +90,7 @@ export class MusicalController {
   }
 
   @Post('upload-multiple-files')
-  @UseInterceptors(FilesInterceptor('files')) // field name: files[]
+  @UseInterceptors(FilesInterceptor('files', 50, multerConfig)) // field name: files[]
   uploadMultiple(@UploadedFiles() files: Express.Multer.File[], @Req() req) {
     return this.musicalService.uploadMultipleFilesToCloud(
       req.user.userId,
@@ -98,7 +99,7 @@ export class MusicalController {
   }
 
   @Post('upload-single-file')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerConfig))
   async artistProfileSetup(
     @UploadedFile() file: Express.Multer.File,
     @Req() req,

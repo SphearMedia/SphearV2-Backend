@@ -74,7 +74,8 @@ export class MusicalService {
       isJointRelease: dto.isJointRelease,
       genre: dto.genre,
       coverArtUrl: dto.coverArtUrl,
-      recordLabel: dto.recordLabel,
+      copyright: dto.copyright,
+      phonographic: dto.phonographic,
       uploadedBy: userId,
       releaseDate: new Date(dto.releaseDate),
       tracks: trackIds, // only _id refs go here

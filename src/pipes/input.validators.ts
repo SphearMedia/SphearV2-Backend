@@ -60,14 +60,14 @@ export const CreateSingleSchemaValidator = Joi.object({
     .valid(...Object.values(GenreEnum))
     .required(),
   coverArtUrl: Joi.string().trim().uri().required(),
-  recordLabel: Joi.string().trim().allow('', null),
+  copyright: Joi.string().trim().allow('', null),
+  phonographic: Joi.string().trim().allow('', null),
   composer: Joi.string().trim().allow('', null),
   songWriter: Joi.string().trim().allow('', null),
   producer: Joi.string().trim().allow('', null),
   audioFileUrl: Joi.string().trim().uri().required(),
   lyrics: Joi.string().trim().allow('', null),
   releaseDate: Joi.date().iso().required(),
-
 });
 
 export const CreateProjectSchemaValidator = Joi.object({
@@ -84,7 +84,8 @@ export const CreateProjectSchemaValidator = Joi.object({
     .valid(...Object.values(GenreEnum))
     .required(),
   coverArtUrl: Joi.string().trim().uri().required(),
-  recordLabel: Joi.string().trim().allow('', null),
+  copyright: Joi.string().trim().allow('', null),
+  phonographic: Joi.string().trim().allow('', null),
   releaseDate: Joi.date().iso().required(),
   tracks: Joi.array()
     .items(
@@ -99,7 +100,8 @@ export const CreateProjectSchemaValidator = Joi.object({
           .valid(...Object.values(GenreEnum))
           .required(),
         coverArtUrl: Joi.string().trim().uri().required(),
-        recordLabel: Joi.string().trim().allow('', null),
+        copyright: Joi.string().trim().allow('', null),
+        phonographic: Joi.string().trim().allow('', null),
         composer: Joi.string().trim().allow('', null),
         songWriter: Joi.string().trim().allow('', null),
         producer: Joi.string().trim().allow('', null),

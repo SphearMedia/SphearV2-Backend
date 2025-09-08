@@ -27,7 +27,9 @@ export class Project extends Document {
   @Prop({ required: true })
   coverArtUrl: string;
 
-  @Prop() recordLabel?: string;
+  @Prop() copyright?: string;
+  
+  @Prop() phonographic?: string;
 
   @Prop({ type: Types.ObjectId, ref: 'User', required: true })
   uploadedBy: Types.ObjectId;

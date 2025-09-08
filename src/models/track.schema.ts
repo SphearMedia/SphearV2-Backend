@@ -24,7 +24,9 @@ export class Track extends Document {
   @Prop({ required: true })
   coverArtUrl: string;
 
-  @Prop() recordLabel?: string;
+  @Prop() copyright?: string;
+  
+  @Prop() phonographic?: string;
 
   @Prop() composer?: string;
 

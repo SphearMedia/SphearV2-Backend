@@ -41,6 +41,7 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { JwtAuthGuard } from 'src/config/jwt-auth.guard';
 import { Roles, RolesGuard } from 'src/config/roles.guard';
+import { multerConfig } from 'src/uploader/multer.config';
 
 @Controller('auth')
 export class AuthController {
@@ -127,7 +128,7 @@ export class AuthController {
   }
 
   @Post('upload-return-url')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerConfig))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
     return this.authService.uploadTest(file);
   }
@@ -146,7 +147,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('set-artist-profile')
   @Roles('artist')
-  @UseInterceptors(FileInterceptor('file'))
+  @UseInterceptors(FileInterceptor('file', multerConfig))
   async artistProfileSetup(
     @UploadedFile() file: Express.Multer.File,
     @Body(new JoiValidationPipe(UpdateArtistProfileSchemaValidator))

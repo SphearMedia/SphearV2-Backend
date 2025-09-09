@@ -100,7 +100,7 @@ export const CreateProjectSchemaValidator = Joi.object({
           .valid(...Object.values(GenreEnum))
           .required(),
         coverArtUrl: Joi.string().trim().uri().required(),
-        copyright: Joi.string().trim().allow('', null),
+        copyright: Joi.string().trim().allow('', null), 
         phonographic: Joi.string().trim().allow('', null),
         composer: Joi.string().trim().allow('', null),
         songWriter: Joi.string().trim().allow('', null),

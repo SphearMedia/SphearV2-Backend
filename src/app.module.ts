@@ -10,6 +10,7 @@ import { MusicalModule } from './musical/musical.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { NotificationQueueModule } from './notifications/notification-queue.module';
 import { PaymentModule } from './payment/payment.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PaymentModule } from './payment/payment.module';
     NotificationQueueModule,
     PaymentModule,
   ],
+  controllers: [AppController],
   providers: [],
 })
 export class AppModule {}

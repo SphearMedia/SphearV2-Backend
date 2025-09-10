@@ -19,7 +19,7 @@ export class User extends Document {
   password: string; // hashed
 
   /** 🎨 Profile */
-  @Prop({default: null, sparse: true})
+  @Prop({ default: null, sparse: true })
   profilePicture?: string;
 
   @Prop({ default: '', trim: true })
@@ -96,7 +96,14 @@ export class User extends Document {
   @Prop({ default: [], type: [Types.ObjectId], ref: 'User' })
   referredUsers?: Types.ObjectId[];
 
- 
+  @Prop({ default: null })
+  stripeCustomerId?: string;
+
+  @Prop({ enum: ['active', 'inactive'], default: 'inactive' })
+  subscriptionStatus?: 'active' | 'inactive';
+
+  @Prop({ default: null })
+  nextBillingDate?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

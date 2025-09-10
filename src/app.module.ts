@@ -9,6 +9,7 @@ import { AppRedisModule } from './globals/redis.module';
 import { MusicalModule } from './musical/musical.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { NotificationQueueModule } from './notifications/notification-queue.module';
+import { PaymentModule } from './payment/payment.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { NotificationQueueModule } from './notifications/notification-queue.modu
     MusicalModule,
     NotificationsModule,
     NotificationQueueModule,
+    PaymentModule,
   ],
   providers: [],
 })

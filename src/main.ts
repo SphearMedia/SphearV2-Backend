@@ -14,7 +14,7 @@ async function bootstrap() {
     new MongoExceptionFilter(),
     new MongooseValidationFilter(),
   );
-  app.use('/payment/webhook', bodyParser.raw({ type: 'application/json' }));
+  app.use('/payments/webhook', bodyParser.raw({ type: 'application/json' }));
   await app.listen(process.env.PORT ?? 3000);
 }
 bootstrap();

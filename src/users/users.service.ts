@@ -63,6 +63,9 @@ export class UsersService {
   async findByReferralCode(code: string): Promise<User | null> {
     return this.userModel.findOne({ referralCode: code }).exec();
   }
+   async findByStripeCustomerId(customerId: string): Promise<User | null> {
+    return this.userModel.findOne({ stripeCustomerId: customerId }).exec();
+  }
 
   async updateProfile(userId: string, update: Partial<User>): Promise<User> {
     const updated = await this.userModel.findByIdAndUpdate(
@@ -72,6 +75,10 @@ export class UsersService {
     );
     if (!updated) throw new NotFoundException('User not found');
     return updated;
+  }
+
+  async updateUserSubscription(userId: string, update: Partial<User>) {
+    return this.userModel.findByIdAndUpdate(userId, update, { new: true });
   }
 
   async getFollowers(userId: string): Promise<string[]> {

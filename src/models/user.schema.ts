@@ -96,14 +96,28 @@ export class User extends Document {
   @Prop({ default: [], type: [Types.ObjectId], ref: 'User' })
   referredUsers?: Types.ObjectId[];
 
-  @Prop({ default: null })
+  /** 💳 Subscription & Payment */
+  @Prop({ type: String, default: null })
   stripeCustomerId?: string;
 
-  @Prop({ enum: ['active', 'inactive'], default: 'inactive' })
-  subscriptionStatus?: 'active' | 'inactive';
+  @Prop({ type: String, default: null })
+  stripeSubscriptionId?: string;
 
-  @Prop({ default: null })
-  nextBillingDate?: Date;
+  @Prop({ type: Boolean, default: false })
+  isSubscribed?: boolean;
+
+  @Prop({ type: Date, default: null })
+  subscriptionStartDate?: Date;
+
+  @Prop({ type: Date, default: null })
+  subscriptionEndDate?: Date;
+
+  @Prop({
+    type: String,
+    enum: ['active', 'trialing', 'past_due', 'canceled', 'incomplete'],
+    default: null,
+  })
+  subscriptionStatus?: string;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

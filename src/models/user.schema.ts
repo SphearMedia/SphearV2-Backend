@@ -1,5 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Document, Types } from 'mongoose';
+import { GenreEnum } from 'src/enums/track.data.enums';
+import { GenderEnum } from 'src/enums/user.enum';
 
 export type UserDocument = User & Document;
 
@@ -25,8 +27,22 @@ export class User extends Document {
   @Prop({ default: '', trim: true })
   bio: string;
 
-  @Prop({ type: [String], default: [] })
-  favoriteGenres: string[];
+  @Prop({
+    type: {
+      day: { type: Number },
+      month: { type: Number },
+      year: { type: Number },
+    },
+    default: null,
+  })
+  dateOfBirth?: {
+    day: number;
+    month: number;
+    year: number;
+  };
+
+  @Prop({ enum: GenderEnum, default: GenderEnum.PREFER_NOT_TO_SAY })
+  gender: GenderEnum;
 
   @Prop({ trim: true })
   timezone?: string; // e.g., Africa/Lagos
@@ -54,6 +70,9 @@ export class User extends Document {
 
   @Prop({ type: [String], default: [] })
   genres?: string[]; // artist genres
+
+  @Prop({ type: [String], default: [] })
+  favoriteGenres: GenreEnum[];
 
   @Prop({ default: false })
   isVerifiedArtist: boolean;

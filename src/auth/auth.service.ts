@@ -3,6 +3,7 @@ import {
   BadRequestException,
   UnauthorizedException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
@@ -14,7 +15,11 @@ import { StatusCodes } from 'http-status-codes';
 import { v4 as uuidv4 } from 'uuid';
 import { Types } from 'mongoose';
 import { UploaderService } from 'src/uploader/uploader.service';
-import { ArtistProfilesetterDto } from './dto/auth_dtos';
+import {
+  ArtistProfilesetterDto,
+  InitialUserProfileUpdateDto,
+  UpdateUserFavouriteGenresDto,
+} from './dto/auth_dtos';
 import { RedisService } from '@liaoliaots/nestjs-redis';
 import { Redis } from 'ioredis';
 
@@ -185,6 +190,29 @@ export class AuthService {
       );
     }
 
+    const isSubscribed = user.isSubscribed;
+    const subscriptionStatus = user.subscriptionStatus;
+    const subscriptionEndDate = user.subscriptionEndDate;
+
+    if (
+      user.role === 'user' &&
+      (!isSubscribed ||
+        !subscriptionStatus ||
+        subscriptionStatus !== 'active' ||
+        !subscriptionEndDate ||
+        subscriptionEndDate < new Date())
+    ) {
+      return ErrorResponse(
+        StatusCodes.PAYMENT_REQUIRED,
+        'Subscription expired or inactive',
+        {
+          id: user._id,
+          isSubscribed: false,
+          access_token,
+        },
+      );
+    }
+
     await this.notificationsService.createLoginNotification(user.id);
     return SuccessResponse(StatusCodes.OK, 'Login successful', {
       id: user._id,
@@ -338,6 +366,40 @@ export class AuthService {
     return SuccessResponse(StatusCodes.OK, 'File uploaded successfully', {
       key,
       url,
+    });
+  }
+
+  async updateUserProfile(userId: string, dto: InitialUserProfileUpdateDto) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    // Optional: Ensure this logic is for normal users only
+    if (user.role === 'artist') {
+      throw new ForbiddenException('Artists cannot update profile this way');
+    }
+
+    user.fullName = dto.fullName;
+    user.dateOfBirth = dto.dateOfBirth;
+    user.gender = dto.gender;
+
+    return SuccessResponse(StatusCodes.OK, 'Profile updated successfully', {
+      userId: user._id,
+      fullName: user.fullName,
+      dateOfBirth: user.dateOfBirth,
+    });
+  }
+
+  async updateFavoriteGenres(
+    userId: string,
+    dto: UpdateUserFavouriteGenresDto,
+  ) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    user.favoriteGenres = dto.favoriteGenres;
+    return SuccessResponse(StatusCodes.OK, 'Favorite genres updated', {
+      userId: user._id,
+      favoriteGenres: user.favoriteGenres,
     });
   }
 

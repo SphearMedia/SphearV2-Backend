@@ -100,7 +100,7 @@ export const CreateProjectSchemaValidator = Joi.object({
           .valid(...Object.values(GenreEnum))
           .required(),
         coverArtUrl: Joi.string().trim().uri().required(),
-        copyright: Joi.string().trim().allow('', null), 
+        copyright: Joi.string().trim().allow('', null),
         phonographic: Joi.string().trim().allow('', null),
         composer: Joi.string().trim().allow('', null),
         songWriter: Joi.string().trim().allow('', null),
@@ -116,4 +116,28 @@ export const CreateProjectSchemaValidator = Joi.object({
 
 export const FollowOrUnfollowArtistSchemaValidator = Joi.object({
   artistId: Joi.string().hex().length(24).required(),
+});
+
+export const InitialUserProfileUpdateSchemaValidator = Joi.object({
+  fullName: Joi.string().min(2).max(50).required(),
+  dateOfBirth: Joi.object({
+    day: Joi.number().integer().min(1).max(31).required(),
+    month: Joi.number().integer().min(1).max(12).required(),
+    year: Joi.number()
+      .integer()
+      .min(1900)
+      .max(new Date().getFullYear())
+      .required(),
+  }).required(),
+ gender: Joi.string()
+    .valid('male', 'female', 'prefer_not_to_say')
+    .required(),
+});
+
+export const UpdateUserFavouriteGenresValidator = Joi.object({
+  favoriteGenres: Joi.array()
+    .items(Joi.string().valid(...Object.values(GenreEnum)))
+    .min(1)
+    //.max(5) // Optional limit
+    .required(),
 });

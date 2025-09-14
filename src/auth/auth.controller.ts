@@ -16,11 +16,13 @@ import { JoiValidationPipe } from 'src/pipes/joi-validation.pipe';
 import {
   CreateAccountSchemaValidator,
   ForgotPasswordSchemaValidator,
+  InitialUserProfileUpdateSchemaValidator,
   LoginSchemaValidator,
   RequestEmailVerificationSchemaValidator,
   ResendEmailSchemaValidator,
   ResetPasswordSchemaValidator,
   UpdateArtistProfileSchemaValidator,
+  UpdateUserFavouriteGenresValidator,
   UpdateUserTypeSchemaValidator,
   VerifyArtistInviteCodeSchemaValidator,
   VerifyEmailSchemaValidator,
@@ -29,10 +31,12 @@ import {
   ArtistProfilesetterDto,
   CreateAccountAuthDto,
   ForgotPasswordAuthDto,
+  InitialUserProfileUpdateDto,
   LoginAuthDto,
   RequestEmailVerificationAuthDto,
   ResendEmailAuthDto,
   ResetPasswordAuthDto,
+  UpdateUserFavouriteGenresDto,
   UpdateUserTypeAuthDto,
   UploadDto,
   VerifyEmailAuthDto,
@@ -127,6 +131,27 @@ export class AuthController {
     );
   }
 
+  @Patch('initial-user-update-profile')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user')
+  async updateProfile(
+    @Req() req,
+    @Body(new JoiValidationPipe(InitialUserProfileUpdateSchemaValidator))
+    dto: InitialUserProfileUpdateDto,
+  ) {
+    return this.authService.updateUserProfile(req.user.userId, dto);
+  }
+
+  @Patch('update-genres')
+  @UseGuards(JwtAuthGuard)
+  async updateGenres(
+    @Req() req,
+    @Body(new JoiValidationPipe(UpdateUserFavouriteGenresValidator))
+    body: UpdateUserFavouriteGenresDto,
+  ) {
+    return this.authService.updateFavoriteGenres(req.user.userId, body);
+  }
+
   @Post('upload-return-url')
   @UseInterceptors(FileInterceptor('file', multerConfig))
   async uploadFile(@UploadedFile() file: Express.Multer.File) {
@@ -154,7 +179,6 @@ export class AuthController {
     dto: ArtistProfilesetterDto,
     @Req() req,
   ) {
-    console.log('----->', req.user);
     return this.authService.setupArtistProfile(req.user.userId, file, dto);
   }
 

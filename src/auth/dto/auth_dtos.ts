@@ -1,3 +1,6 @@
+import { GenreEnum } from 'src/enums/track.data.enums';
+import { GenderEnum } from 'src/enums/user.enum';
+
 export class RequestEmailVerificationAuthDto {
   email: string;
 }
@@ -48,4 +51,18 @@ export class ArtistProfilesetterDto {
 
 export class VerifyInviteCodeDto {
   inviteCode: string;
+}
+
+export class InitialUserProfileUpdateDto {
+  fullName: string;
+  dateOfBirth: {
+    day: number;
+    month: number;
+    year: number;
+  };
+  gender: GenderEnum;
+}
+
+export class UpdateUserFavouriteGenresDto {
+  favoriteGenres: GenreEnum[];
 }

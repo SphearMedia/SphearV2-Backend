@@ -8,6 +8,7 @@ import {
   Res,
   Get,
   UseGuards,
+  HttpCode,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { PaymentService } from './payment.service';
@@ -25,6 +26,7 @@ export class PaymentController {
     return this.paymentService.createSubscription(req.user.userId);
   }
 
+  @HttpCode(200)
   @Post('webhook')
   async handleStripeWebhook(
     @Req() req: Request,

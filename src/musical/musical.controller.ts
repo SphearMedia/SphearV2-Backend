@@ -52,7 +52,7 @@ export class MusicalController {
     dto: CreateProjectDto,
     @Req() req,
   ) {
-   // console.log('DTO Received:', dto);
+    // console.log('DTO Received:', dto);
     return this.musicalService.uploadProject(req.user.userId, dto);
   }
 
@@ -153,5 +153,20 @@ export class MusicalController {
   @Get('recent-uploads')
   getRecentMusic() {
     return this.musicalService.getRecentMusic();
+  }
+
+  @Get('discover')
+  async discoverMusic(
+    @Query('category') category: string,
+    @Query('page') page = 1,
+    @Query('limit') limit = 20,
+    @Req() req,
+  ) {
+    return this.musicalService.discoverMusic(
+      req.user.userId,
+      category,
+      +page,
+      +limit,
+    );
   }
 }

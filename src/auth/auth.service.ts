@@ -397,6 +397,7 @@ export class AuthService {
     if (!user) throw new NotFoundException('User not found');
 
     user.favoriteGenres = dto.favoriteGenres;
+    await user.save();
     return SuccessResponse(StatusCodes.OK, 'Favorite genres updated', {
       userId: user._id,
       favoriteGenres: user.favoriteGenres,

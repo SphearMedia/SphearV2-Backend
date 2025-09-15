@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { Model, SortOrder, Types } from 'mongoose';
 import { Project } from 'src/models/project.schema';
 import { Track, TrackDocument } from 'src/models/track.schema';
 import { CreateProjectDto, CreateSingleDto } from './dto/musical.dto';
@@ -569,6 +569,112 @@ export class MusicalService {
       recentSingles,
       recentProjects,
     });
+  }
+
+  async discoverMusic(userId: string, category: string, page = 1, limit = 20) {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new NotFoundException('User not found');
+
+    const skip = (page - 1) * limit;
+
+    let tracksQuery;
+    //const sortByPopularity = { playCount: -1 };
+    const sortByPopularity: { [key: string]: SortOrder } = { playCount: -1 };
+
+    const GenreMap: Record<string, GenreEnum> = {
+      afrobeat: GenreEnum.AFROBEAT,
+      pop: GenreEnum.POP,
+      hiphop: GenreEnum.HIPHOP,
+      'hip-hop': GenreEnum.HIPHOP,
+      rnb: GenreEnum.RNB,
+      'r&b': GenreEnum.RNB,
+      reggae: GenreEnum.REGGAE,
+      rock: GenreEnum.ROCK,
+      edm: GenreEnum.EDM,
+      jazz: GenreEnum.JAZZ,
+      gospel: GenreEnum.GOSPEL,
+      country: GenreEnum.COUNTRY,
+      classical: GenreEnum.CLASSICAL,
+      other: GenreEnum.OTHER,
+    };
+
+    // 🧠 Category-based logic
+    switch (category.toLowerCase()) {
+      case 'for_you':
+        if (!user.favoriteGenres || !user.favoriteGenres.length) {
+          throw new BadRequestException('User has no preferred genres');
+        }
+
+        const userPlayMap = await this.playHistoryModel.aggregate([
+          { $match: { user: user._id } },
+          {
+            $group: {
+              _id: '$track',
+              userPlayCount: { $sum: 1 },
+              lastPlayedAt: { $max: '$lastPlayedAt' },
+            },
+          },
+        ]);
+
+        const userPlayMapObj = Object.fromEntries(
+          userPlayMap.map((p) => [p._id.toString(), p.userPlayCount]),
+        );
+
+        tracksQuery = await this.singleModel
+          .find({ favoriteGenres: { $in: user.favoriteGenres } })
+          .lean();
+
+        const enriched = tracksQuery.map((track) => {
+          const userPlay = userPlayMapObj[track._id.toString()] || 0;
+          const score = userPlay * 2 + (track.playCount || 0);
+          return { ...track, score };
+        });
+
+        const sorted = enriched
+          .sort((a, b) => b.score - a.score)
+          .slice(skip, skip + limit);
+
+        return SuccessResponse(StatusCodes.OK, 'For You music fetched', {
+          category: 'for_you',
+          results: sorted,
+          total: enriched.length,
+        });
+
+      case 'all':
+        const allTracks = await this.singleModel
+          .find()
+          .sort(sortByPopularity)
+          .skip(skip)
+          .limit(limit)
+          .lean();
+
+        return SuccessResponse(StatusCodes.OK, 'All music fetched', {
+          category: 'all',
+          results: allTracks,
+        });
+
+      default:
+        const normalizedGenre = GenreMap[category.toLowerCase()];
+        if (!normalizedGenre) {
+          throw new BadRequestException('Invalid genre category');
+        }
+        // Assume category is a genre (e.g. hiphop, jazz)
+        const genreTracks = await this.singleModel
+          .find({ genre: normalizedGenre })
+          .sort(sortByPopularity)
+          .skip(skip)
+          .limit(limit)
+          .lean();
+
+        return SuccessResponse(
+          StatusCodes.OK,
+          `Genre: ${category} music fetched`,
+          {
+            category,
+            results: genreTracks,
+          },
+        );
+    }
   }
 
   private isRepeatWithinThreshold(

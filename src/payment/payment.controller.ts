@@ -34,6 +34,11 @@ export class PaymentController {
     @Headers('stripe-signature') signature: string,
   ) {
     const payload = req.body as Buffer;
-    return this.paymentService.handleWebhookEvent(signature, payload);
+    res.status(200).send();
+    try {
+      this.paymentService.handleWebhookEvent(signature, payload);
+    } catch (error) {
+      console.error('Error processing webhook event:', error);
+    }
   }
 }

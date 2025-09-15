@@ -12,12 +12,14 @@ import {
 import { Request, Response } from 'express';
 import { PaymentService } from './payment.service';
 import { JwtAuthGuard } from 'src/config/jwt-auth.guard';
+import { Roles, RolesGuard } from 'src/config/roles.guard';
 
 @Controller('payments')
 export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('user')
   @Get('create-subscription')
   async createSubscription(@Req() req) {
     return this.paymentService.createSubscription(req.user.userId);

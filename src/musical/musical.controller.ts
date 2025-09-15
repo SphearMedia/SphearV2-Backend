@@ -146,13 +146,20 @@ export class MusicalController {
   }
 
   @Get('top-streams')
-  getTopMusic() {
-    return this.musicalService.getTopMusic();
+  async getTopMusic(@Query('page') page = '1', @Query('limit') limit = '10') {
+    const parsedPage = Math.max(Number(page), 1);
+    const parsedLimit = Math.min(Math.max(Number(limit), 1), 100);
+    return this.musicalService.getTopMusic(parsedPage, parsedLimit);
   }
 
   @Get('recent-uploads')
-  getRecentMusic() {
-    return this.musicalService.getRecentMusic();
+  async getRecentMusic(
+    @Query('page') page = '1',
+    @Query('limit') limit = '10',
+  ) {
+    const parsedPage = Math.max(Number(page), 1);
+    const parsedLimit = Math.min(Math.max(Number(limit), 1), 100);
+    return this.musicalService.getRecentMusic(parsedPage, parsedLimit);
   }
 
   @Get('discover')

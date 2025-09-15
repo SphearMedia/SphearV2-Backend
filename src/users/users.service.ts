@@ -63,7 +63,7 @@ export class UsersService {
   async findByReferralCode(code: string): Promise<User | null> {
     return this.userModel.findOne({ referralCode: code }).exec();
   }
-   async findByStripeCustomerId(customerId: string): Promise<User | null> {
+   async findByStripeCustomerId(customerId: string): Promise<User | null> { 
     return this.userModel.findOne({ stripeCustomerId: customerId }).exec();
   }
 

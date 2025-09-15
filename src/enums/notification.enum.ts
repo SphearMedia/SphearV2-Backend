@@ -9,5 +9,10 @@ export enum NotificationType {
   SINGLE_REALEASE = 'single_release',
   NEW_FEATURE = 'new_feature',
   PLAYLIST_ADDITION = 'playlist_addition',
+  SUBSCRIPTION_PURCHASE = 'subscription_purchase',
+  SUBSCRIPTION_CANCELLATION = 'subscription_cancellation',
+  SUBSCRIPTION_RENEWAL = 'subscription_renewal',
+  PAYMENT_FAILURE = 'payment_failure',
+  SYSTEM_MAINTENANCE = 'system_maintenance',
   SYSTEM = 'system',
 }

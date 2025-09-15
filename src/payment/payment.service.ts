@@ -43,6 +43,13 @@ export class PaymentService {
 
     const customer = await this.createCustomer(user.email, user.id);
 
+    // Save stripeCustomerId to user if not already saved
+    if (!user.stripeCustomerId || user.stripeCustomerId !== customer.id) {
+      await this.userService.updateProfile(user.id, {
+        stripeCustomerId: customer.id,
+      });
+    }
+
     // 🔍 STEP 1: Check if any incomplete subscription already exists
     const existingSubscriptions = await this.stripe.subscriptions.list({
       customer: customer.id,
@@ -144,6 +151,8 @@ export class PaymentService {
         const subscription = data as Stripe.Subscription;
         const customerId = subscription.customer as string;
 
+        console.log('Processing subscription for customer:', customerId);
+
         const user = await this.userService.findByStripeCustomerId(customerId);
         if (!user) break;
 
@@ -172,6 +181,8 @@ export class PaymentService {
         console.dir(data, { depth: null });
         const subscription = data as Stripe.Subscription;
         const customerId = subscription.customer as string;
+
+        console.log('Processing subscription for customer:', customerId);
         const user = await this.userService.findByStripeCustomerId(customerId);
         if (!user) break;
 
@@ -189,6 +200,8 @@ export class PaymentService {
         const invoice = data as Stripe.Invoice;
         //const subscriptionId = invoice.subscription as string;
         const customerId = invoice.customer as string;
+
+        console.log('Processing subscription for customer:', customerId);
         const user = await this.userService.findByStripeCustomerId(customerId);
         if (!user) break;
 
@@ -208,6 +221,7 @@ export class PaymentService {
         console.dir(data, { depth: null });
         const paymentIntent = data as Stripe.PaymentIntent;
         const customerId = paymentIntent.customer as string;
+        console.log('Processing subscription for customer:', customerId);
         const user = await this.userService.findByStripeCustomerId(customerId);
         if (!user) break;
 

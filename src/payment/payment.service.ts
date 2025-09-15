@@ -165,6 +165,13 @@ export class PaymentService {
           (subscription as any).current_period_end * 1000,
         );
 
+        // const currentPeriodEnd = (subscription as any).current_period_end;
+
+        // const endDate =
+        //   currentPeriodEnd && typeof currentPeriodEnd === 'number'
+        //     ? new Date(currentPeriodEnd * 1000)
+        //     : undefined;
+
         await this.notificationsService.createSubscriptionPurchaseNotification(
           user.id,
         );
@@ -241,7 +248,7 @@ export class PaymentService {
         console.log(
           `Payment succeeded for ${user.email} — Amount: ${paymentIntent.amount}`,
         );
-       
+
         break;
       }
 

@@ -518,59 +518,69 @@ export class MusicalService {
     });
   }
 
-  async getTopMusic(limit = 10) {
+  async getTopMusic(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
     const topSingles = await this.singleModel
       .find()
       .sort({ playCount: -1 })
+      .skip(skip)
       .limit(limit)
       .lean();
 
-    const projects = await this.projectModel
+    const allProjects = await this.projectModel
       .find()
       .populate<{ tracks: TrackDocument[] }>('tracks')
       .lean();
 
-    const topProjectTracks = projects
-      .flatMap((p) =>
-        p.tracks.map((t) => ({
-          ...t,
-          project: { _id: p._id, title: p.title },
+    const topProjectTracks = allProjects
+      .flatMap((project) =>
+        project.tracks.map((track) => ({
+          ...track,
+          project: { _id: project._id, title: project.title },
         })),
       )
-      .sort((a, b) => b.playCount - a.playCount)
-      .slice(0, limit);
+      .sort((a, b) => (b.playCount || 0) - (a.playCount || 0))
+      .slice(skip, skip + limit);
 
     const totalStreams = [
-      ...topSingles.map((t) => t.playCount),
-      ...topProjectTracks.map((t) => t.playCount),
+      ...topSingles.map((t) => t.playCount || 0),
+      ...topProjectTracks.map((t) => t.playCount || 0),
     ].reduce((acc, curr) => acc + curr, 0);
 
     return SuccessResponse(StatusCodes.OK, 'Global Top music fetched', {
+      page,
+      limit,
       totalStreams,
       topSingles,
       topProjectTracks,
     });
   }
 
-  async getRecentMusic(limit = 10) {
+  async getRecentMusic(page = 1, limit = 10) {
+    const skip = (page - 1) * limit;
+
     const recentSingles = await this.singleModel
       .find()
       .sort({ createdAt: -1 })
+      .skip(skip)
       .limit(limit)
       .lean();
 
     const recentProjects = await this.projectModel
       .find()
       .sort({ createdAt: -1 })
+      .skip(skip)
       .limit(limit)
       .lean();
 
     return SuccessResponse(StatusCodes.OK, 'Global Recent music fetched', {
+      page,
+      limit,
       recentSingles,
       recentProjects,
     });
   }
-
 
   async discoverMusic(userId: string, category: string, page = 1, limit = 20) {
     const user = await this.userService.findById(userId);

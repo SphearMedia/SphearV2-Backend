@@ -241,6 +241,7 @@ export class PaymentService {
         console.log(
           `Payment succeeded for ${user.email} — Amount: ${paymentIntent.amount}`,
         );
+        break;
       }
 
       default:

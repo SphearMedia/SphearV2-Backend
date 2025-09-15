@@ -571,14 +571,12 @@ export class MusicalService {
     });
   }
 
+
   async discoverMusic(userId: string, category: string, page = 1, limit = 20) {
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
     const skip = (page - 1) * limit;
-
-    let tracksQuery;
-    //const sortByPopularity = { playCount: -1 };
     const sortByPopularity: { [key: string]: SortOrder } = { playCount: -1 };
 
     const GenreMap: Record<string, GenreEnum> = {
@@ -598,7 +596,6 @@ export class MusicalService {
       other: GenreEnum.OTHER,
     };
 
-    // 🧠 Category-based logic
     switch (category.toLowerCase()) {
       case 'for_you':
         if (!user.favoriteGenres || !user.favoriteGenres.length) {
@@ -620,37 +617,86 @@ export class MusicalService {
           userPlayMap.map((p) => [p._id.toString(), p.userPlayCount]),
         );
 
-        tracksQuery = await this.singleModel
-          .find({ favoriteGenres: { $in: user.favoriteGenres } })
+        // FOR SINGLES
+        const singleTracks = await this.singleModel
+          .find({ genre: { $in: user.favoriteGenres } })
           .lean();
 
-        const enriched = tracksQuery.map((track) => {
+        const enrichedSingles = singleTracks.map((track) => {
           const userPlay = userPlayMapObj[track._id.toString()] || 0;
           const score = userPlay * 2 + (track.playCount || 0);
           return { ...track, score };
         });
 
-        const sorted = enriched
+        const sortedSingles = enrichedSingles
+          .sort((a, b) => b.score - a.score)
+          .slice(skip, skip + limit);
+
+        // FOR ALBUMS
+        const allProjects = await this.projectModel
+          .find({ genre: { $in: user.favoriteGenres } })
+          .populate<{ tracks: TrackDocument[] }>('tracks')
+          .lean();
+
+        console.log('All projects length:', allProjects.length);
+
+        const playedTrackIds = new Set(Object.keys(userPlayMapObj));
+
+        const scoredProjects = allProjects.map((project) => {
+          let score = 0;
+
+          for (const track of project.tracks) {
+            const userPlay = userPlayMapObj[track._id.toString()] || 0;
+            const popularity = track.playCount || 0;
+            score += userPlay * 2 + popularity;
+          }
+
+          return { ...project, score };
+        });
+
+        console.log('Scored projects length:', scoredProjects.length);
+
+        // Sort all albums by score (those with plays come first), then paginate
+        const sortedAlbums = scoredProjects
           .sort((a, b) => b.score - a.score)
           .slice(skip, skip + limit);
 
         return SuccessResponse(StatusCodes.OK, 'For You music fetched', {
           category: 'for_you',
-          results: sorted,
-          total: enriched.length,
+          results: sortedSingles,
+          albums: sortedAlbums,
+          totalSingles: enrichedSingles.length,
+          totalAlbums: scoredProjects.length,
         });
 
       case 'all':
-        const allTracks = await this.singleModel
+        const allSingles = await this.singleModel
           .find()
           .sort(sortByPopularity)
           .skip(skip)
           .limit(limit)
           .lean();
 
+        const allProjectsWithTracks = await this.projectModel
+          .find()
+          .populate<{ tracks: TrackDocument[] }>('tracks')
+          .lean();
+
+        const albumsByPopularity = allProjectsWithTracks
+          .map((project) => {
+            const score = project.tracks.reduce(
+              (acc, t) => acc + (t.playCount || 0),
+              0,
+            );
+            return { ...project, score };
+          })
+          .sort((a, b) => b.score - a.score)
+          .slice(skip, skip + limit);
+
         return SuccessResponse(StatusCodes.OK, 'All music fetched', {
           category: 'all',
-          results: allTracks,
+          results: allSingles,
+          albums: albumsByPopularity,
         });
 
       default:
@@ -658,20 +704,37 @@ export class MusicalService {
         if (!normalizedGenre) {
           throw new BadRequestException('Invalid genre category');
         }
-        // Assume category is a genre (e.g. hiphop, jazz)
-        const genreTracks = await this.singleModel
+
+        const genreSingles = await this.singleModel
           .find({ genre: normalizedGenre })
           .sort(sortByPopularity)
           .skip(skip)
           .limit(limit)
           .lean();
 
+        const genreProjects = await this.projectModel
+          .find({ genre: normalizedGenre })
+          .populate<{ tracks: TrackDocument[] }>('tracks')
+          .lean();
+
+        const genreAlbums = genreProjects
+          .map((p) => {
+            const score = p.tracks.reduce(
+              (acc, t) => acc + (t.playCount || 0),
+              0,
+            );
+            return { ...p, score };
+          })
+          .sort((a, b) => b.score - a.score)
+          .slice(skip, skip + limit);
+
         return SuccessResponse(
           StatusCodes.OK,
           `Genre: ${category} music fetched`,
           {
             category,
-            results: genreTracks,
+            results: genreSingles,
+            albums: genreAlbums,
           },
         );
     }

@@ -165,6 +165,10 @@ export class PaymentService {
           (subscription as any).current_period_end * 1000,
         );
 
+        await this.notificationsService.createSubscriptionPurchaseNotification(
+          user.id,
+        );
+
         await this.userService.updateUserSubscription(user.id, {
           stripeSubscriptionId: subscription.id,
           subscriptionStatus: subscription.status,
@@ -186,6 +190,10 @@ export class PaymentService {
         const user = await this.userService.findByStripeCustomerId(customerId);
         if (!user) break;
 
+        await this.notificationsService.createSubscriptionCancellationNotification(
+          user.id,
+        );
+
         await this.userService.updateUserSubscription(user.id, {
           subscriptionStatus: 'canceled',
           isSubscribed: false,
@@ -204,6 +212,10 @@ export class PaymentService {
         console.log('Processing subscription for customer:', customerId);
         const user = await this.userService.findByStripeCustomerId(customerId);
         if (!user) break;
+
+        await this.notificationsService.createSubscriptionRenewalNotification(
+          user.id,
+        );
 
         // Optionally update billing details
         await this.userService.updateUserSubscription(user.id, {
@@ -229,13 +241,12 @@ export class PaymentService {
         console.log(
           `Payment succeeded for ${user.email} — Amount: ${paymentIntent.amount}`,
         );
-        break;
       }
 
       default:
         console.log(`Unhandled event type ${event.type}`);
         break;
     }
-    return { received: true };
+    // return { received: true };
   }
 }

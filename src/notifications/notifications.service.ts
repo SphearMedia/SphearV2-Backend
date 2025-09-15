@@ -190,4 +190,58 @@ export class NotificationsService {
 
     return this.createNotification(userId, title, message, type);
   }
+
+  async createSubscriptionPurchaseNotification(
+    userId: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Subscription Activated! 🎉',
+      'Your subscription is now active! Enjoy unlimited access to exclusive content, early releases, and a world of music at your fingertips. Thank you for being a valued member of our community!',
+      NotificationType.SUBSCRIPTION_PURCHASE,
+    );
+  }
+
+  async createSubscriptionCancellationNotification(
+    userId: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Subscription Cancelled',
+      'Your subscription has been cancelled. We\'re sorry to see you go! If you change your mind, we\'d love to welcome you back to enjoy all the exclusive content and features. Thank you for being part of our community.',
+      NotificationType.SUBSCRIPTION_CANCELLATION,
+    );
+  }
+
+  async createSubscriptionRenewalNotification(
+    userId: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Subscription Renewed! 🎉',
+      'Your subscription has been successfully renewed! Enjoy uninterrupted access to exclusive content, early releases, and a world of music at your fingertips. Thank you for continuing to be a valued member of our community!',
+      NotificationType.SUBSCRIPTION_RENEWAL,
+    );
+  }
+
+  async createPaymentFailureNotification(userId: string): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Payment Failure Alert',
+      'We encountered an issue processing your recent payment. Please update your payment information to continue enjoying uninterrupted access to our services. If you need assistance, our support team is here to help!',
+      NotificationType.PAYMENT_FAILURE,
+    );
+  }
+
+  async createSystemMaintenanceNotification(
+    userId: string,
+    maintenanceTime: string,
+  ): Promise<Notification> {
+    return this.createNotification(
+      userId,
+      'Scheduled System Maintenance',
+      `We will be performing scheduled maintenance on our system on ${maintenanceTime}. During this time, some services may be temporarily unavailable. We apologize for any inconvenience and appreciate your understanding as we work to improve your experience.`,
+      NotificationType.SYSTEM_MAINTENANCE,
+    );
+  }
 }

@@ -569,6 +569,7 @@ export class MusicalService {
 
     const recentProjects = await this.projectModel
       .find()
+      .populate('tracks')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(limit)

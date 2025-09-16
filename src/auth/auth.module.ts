@@ -9,6 +9,7 @@ import { User, UserSchema } from 'src/models/user.schema';
 import { JwtStrategy } from 'src/config/jwt.strategy';
 import { UploaderModule } from 'src/uploader/uploader.module';
 import { NotificationsModule } from 'src/notifications/notifications.module';
+import { MailingModule } from 'src/mailing/mailing.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { NotificationsModule } from 'src/notifications/notifications.module';
     UsersModule,
     UploaderModule,
     NotificationsModule,
+    MailingModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, JwtStrategy],

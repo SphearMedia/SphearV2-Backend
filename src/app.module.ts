@@ -11,6 +11,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { NotificationQueueModule } from './notifications/notification-queue.module';
 import { PaymentModule } from './payment/payment.module';
 import { AppController } from './app.controller';
+import { MailingModule } from './mailing/mailing.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { AppController } from './app.controller';
     NotificationsModule,
     NotificationQueueModule,
     PaymentModule,
+    MailingModule,
   ],
   controllers: [AppController],
   providers: [],

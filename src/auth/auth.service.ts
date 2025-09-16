@@ -25,6 +25,8 @@ import { Redis } from 'ioredis';
 
 import { randomInt } from 'crypto';
 import { NotificationsService } from 'src/notifications/notifications.service';
+import { MailingService } from 'src/mailing/mailing.service';
+import { MailPayload } from 'src/mailing/dto/create-mailing.dto';
 
 interface OtpStoreEntry {
   code: string;
@@ -39,6 +41,7 @@ export class AuthService {
     private userService: UsersService,
     private jwtService: JwtService,
     private uploaderService: UploaderService,
+    private mailingService: MailingService,
     private readonly configService: ConfigService,
     private readonly redisService: RedisService,
     private readonly notificationsService: NotificationsService,
@@ -96,6 +99,14 @@ export class AuthService {
 
     // Replace this with actual email service
     console.log(`[OTP] Sending code ${otp} to ${email}`);
+    const payload: MailPayload = {
+      to: [email],
+      subject: 'Verify your email',
+      html: '<p>Your verification code is <b>' + otp + '</b></p>',
+      text: `Your verification code is ${otp}`,
+      // `from` is optional — your builder injects DEFAULT_FROM if missing
+    };
+    await this.mailingService.sendSingleEmail(payload);
 
     return SuccessResponse(StatusCodes.OK, 'Verification code sent to email', {
       email: email,
@@ -228,6 +239,14 @@ export class AuthService {
     const otp = await this.generateOtp(email);
 
     console.log(`[OTP] Sending code ${otp} to ${email}`);
+    const payload: MailPayload = {
+      to: [email],
+      subject: 'Verify your email',
+      html: '<p>Your verification code is <b>' + otp + '</b></p>',
+      text: `Your verification code is ${otp}`,
+      // `from` is optional — your builder injects DEFAULT_FROM if missing
+    };
+    await this.mailingService.sendSingleEmail(payload);
     return SuccessResponse(
       StatusCodes.OK,
       'Verification code resent to email',
